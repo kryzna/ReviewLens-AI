@@ -1,0 +1,9 @@
+author,rating,date,text,source_url,verified
+Alice,5,2024-03-01,Excellent platform with intuitive interface. Setup was fast and support was very helpful.,https://example.com/review/1,true
+Bob,2,2024-03-05,Slow support response times on the free tier. Waited 48 hours for a basic question.,,false
+Carol,4,2024-02-15,"Great features for enterprise users. Worth the price, though onboarding took some time.",https://example.com/review/3,true
+Dave,3,2024-01-20,Reliable system but customer support response time could be faster. Good product overall.,,false
+Eve,5,2024-04-10,Best tool in its class. The documentation is excellent and the team is very responsive.,https://example.com/review/5,true
+Frank,1,2024-02-28,Product keeps crashing after the latest update. Very disappointed with the quality.,,false
+Grace,4,2024-03-22,Easy to use and well-documented. Would recommend to anyone looking for this type of solution.,https://example.com/review/7,true
+Heidi,5,2024-04-01,Pricing is a bit high but the value justifies it. The analytics features alone are worth it.,https://example.com/review/8,true

@@ -1,0 +1,5 @@
+{"author":"Alice","rating":5,"date":"2024-03-01","text":"Excellent platform with intuitive interface. Setup was fast.","source_url":"https://example.com/review/1","verified":true}
+{"author":"Bob","rating":2,"date":"2024-03-05","text":"Slow support response times on the free tier. Waited 48 hours for a basic question.","verified":false}
+{"author":"Carol","rating":4,"date":"2024-02-15","text":"Great features for enterprise users. Worth the price, though onboarding took some time.","verified":true}
+{"author":"Dave","rating":3,"date":"2024-01-20","text":"Reliable system but customer support response time could be faster.","verified":false}
+{"author":"Eve","rating":5,"date":"2024-04-10","text":"Best tool in its class. The documentation is excellent and the team is very responsive.","verified":true}

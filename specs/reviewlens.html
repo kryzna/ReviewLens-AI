@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviewLens AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+    .glass-card { background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border: 1px solid rgba(124,58,237,0.15); }
+    .chat-bubble { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .citation-chip { background: linear-gradient(135deg, #7c3aed, #06b6d4); color: white; padding: 1px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; cursor: pointer; display: inline-block; margin: 0 2px; }
+    .citation-chip:hover { opacity: 0.85; }
+    .dropzone { transition: all 0.2s; }
+    .dropzone.dragover { background: rgba(124,58,237,0.05); border-color: #7c3aed; }
+    .source-badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 500; background: rgba(124,58,237,0.1); color: #7c3aed; }
+    .session-item { transition: all 0.15s; }
+    .session-item:hover { background: rgba(124,58,237,0.05); }
+    .session-item.active { background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(6,182,212,0.08)); border-left: 3px solid #7c3aed; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-violet-50 to-sky-50 min-h-screen">
+
+  <div class="flex h-screen">
+    <!-- Left Sidebar -->
+    <aside class="w-80 bg-white border-r border-violet-100 flex flex-col">
+      <div class="p-5 flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-violet-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white">
+          <i class="fas fa-search text-sm"></i>
+        </div>
+        <h1 class="text-2xl font-bold">ReviewLens</h1>
+      </div>
+
+      <div class="px-4 pb-4">
+        <button onclick="showNewSessionView()" class="w-full py-3 bg-gradient-to-r from-violet-600 to-cyan-500 text-white rounded-2xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-violet-200">
+          <i class="fas fa-plus"></i> New Session
+        </button>
+      </div>
+
+      <div class="px-5 pb-2 flex items-baseline gap-2">
+        <span class="text-xs uppercase tracking-widest text-slate-700 font-semibold">Sessions</span>
+        <span id="session-count" class="text-xs text-slate-400">5 total</span>
+      </div>
+      <div id="product-list" class="flex-1 overflow-auto px-2 pb-4 space-y-1"></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- New Session View -->
+      <div id="new-session-view" class="hidden flex-1 overflow-auto">
+        <div class="max-w-2xl mx-auto py-12 px-8">
+          <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold mb-3">Start a New Analysis Session</h1>
+            <p class="text-slate-500">Import reviews from Trustpilot or upload your own data</p>
+          </div>
+
+          <div class="glass-card rounded-3xl p-8 shadow-xl shadow-violet-100">
+            <!-- Source Selector -->
+            <label class="block text-sm font-medium text-slate-700 mb-2">Review Source</label>
+            <div class="relative mb-6">
+              <select id="source-select" class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none bg-white appearance-none pr-12">
+                <option>Trustpilot</option>
+                <option>Capterra</option>
+                <option>G2</option>
+                <option>App Store</option>
+              </select>
+              <i class="fas fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+            </div>
+
+            <!-- URL Input -->
+            <label class="block text-sm font-medium text-slate-700 mb-2">Trustpilot URL</label>
+            <div class="relative mb-2">
+              <i class="fas fa-link absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="url-input" type="text" placeholder="https://www.trustpilot.com/review/example.com" 
+                     class="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none">
+            </div>
+            <p class="text-xs text-slate-500 mb-6">Only Trustpilot URL scraping is available in the prototype</p>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-6">
+              <div class="flex-1 h-px bg-slate-200"></div>
+              <span class="text-slate-400 text-sm">or</span>
+              <div class="flex-1 h-px bg-slate-200"></div>
+            </div>
+
+            <!-- Upload -->
+            <label class="block text-sm font-medium text-slate-700 mb-2">Upload Review Data</label>
+            <div id="dropzone" class="dropzone border-2 border-dashed border-violet-200 rounded-2xl p-12 text-center cursor-pointer hover:border-violet-400">
+              <div class="w-16 h-16 mx-auto mb-4 bg-violet-50 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-cloud-upload-alt text-2xl text-violet-500"></i>
+              </div>
+              <p class="font-medium text-slate-700">Drag & drop your CSV or JSONL file here</p>
+              <p class="text-sm text-slate-500 mt-1">or click to browse</p>
+              <input id="file-input" type="file" accept=".csv,.jsonl" class="hidden">
+            </div>
+
+            <!-- Required fields callout -->
+            <div class="mt-6 p-4 bg-violet-50 rounded-2xl">
+              <p class="text-sm font-medium text-violet-700 mb-1">Required fields:</p>
+              <code class="text-sm text-slate-700">author, rating, date, text, source_url (optional)</code>
+            </div>
+
+            <!-- Submit -->
+            <button onclick="ingestReviews()" class="mt-6 w-full py-4 bg-gradient-to-r from-violet-600 to-violet-500 text-white rounded-2xl font-medium flex items-center justify-center gap-3 shadow-lg shadow-violet-200">
+              <i class="fas fa-arrow-up-from-bracket"></i> Ingest Reviews
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis View -->
+      <div id="analysis-view" class="flex-1 overflow-auto p-8">
+        <div class="glass-card rounded-3xl p-8 mb-6">
+          <!-- Header row -->
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <span id="product-source-badge" class="source-badge mb-3">Trustpilot</span>
+              <h1 id="product-title" class="text-4xl font-bold mt-3 mb-1">Example Product</h1>
+              <a id="product-source-link" href="#" class="text-violet-600 text-sm hover:underline flex items-center gap-2">
+                View on source <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+              </a>
+            </div>
+            <div class="text-right">
+              <div class="flex items-baseline gap-2 justify-end">
+                <span id="product-rating" class="text-5xl font-bold">4.2</span>
+                <span id="rating-stars" class="text-amber-400 text-xl"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-4 gap-6 mb-8">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Reviews</p>
+              <p id="stat-reviews" class="text-3xl font-bold">284</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Verified</p>
+              <p id="stat-verified" class="text-3xl font-bold">256</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Date Range</p>
+              <p id="stat-daterange" class="text-lg font-bold mt-1">Jan 2024 – May 2024</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Session ID</p>
+              <p id="stat-sessionid" class="text-lg font-bold mt-1">#mn34jk</p>
+            </div>
+          </div>
+
+          <!-- Star Distribution -->
+          <p class="text-sm font-medium text-slate-500 mb-4">Rating Distribution</p>
+          <div id="star-distribution" class="space-y-3"></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 bg-white/60 p-1 rounded-2xl w-fit mb-6 border border-violet-100">
+          <button onclick="switchTab(0)" id="tab-chat" class="tab-btn px-6 py-2 rounded-xl font-medium transition-all flex items-center gap-2">
+            <i class="fas fa-comment-dots"></i> Chat
+          </button>
+          <button onclick="switchTab(1)" id="tab-reviews" class="tab-btn px-6 py-2 rounded-xl font-medium transition-all flex items-center gap-2">
+            <i class="fas fa-file-lines"></i> Reviews <span id="reviews-count">(8)</span>
+          </button>
+        </div>
+
+        <!-- Chat Panel -->
+        <div id="chat-panel">
+          <div class="glass-card rounded-3xl flex flex-col">
+            <div id="chat-messages" class="p-6 space-y-6 min-h-[300px]"></div>
+
+            <!-- Suggested questions -->
+            <div id="suggested-questions" class="px-6 pb-4 flex flex-wrap gap-2">
+              <button onclick="askSuggested('Most common complaints')" class="px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm hover:bg-violet-100">Most common complaints</button>
+              <button onclick="askSuggested('Support quality feedback')" class="px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm hover:bg-violet-100">Support quality feedback</button>
+              <button onclick="askSuggested('Pricing concerns')" class="px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm hover:bg-violet-100">Pricing concerns</button>
+            </div>
+
+            <div class="p-4 border-t border-violet-100">
+              <div class="flex gap-3">
+                <input id="chat-input" type="text" placeholder="Ask about the reviews..." 
+                       class="flex-1 px-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none">
+                <button onclick="sendChatMessage()" class="bg-gradient-to-r from-violet-600 to-violet-500 text-white px-8 rounded-2xl font-medium flex items-center gap-2 shadow-lg shadow-violet-200">
+                  <i class="fas fa-triangle-exclamation"></i> Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- All Reviews Panel -->
+        <div id="reviews-panel" class="hidden">
+          <div id="reviews-list" class="space-y-4"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Session catalog (replaces simple products array, adds metadata)
+    let sessions = {
+      "Example Product": {
+        source: "Trustpilot", reviews: 284, verified: 256, rating: 4.2,
+        dateRange: "Jan 2024 – May 2024", sessionId: "#ex01ap",
+        ageLabel: "5 min ago", sourceUrl: "https://trustpilot.com/example",
+        distribution: {5: 156, 4: 72, 3: 38, 2: 12, 1: 6}
+      },
+      "CloudSync Pro": {
+        source: "G2", reviews: 156, verified: 140, rating: 4.5,
+        dateRange: "Feb 2024 – Apr 2024", sessionId: "#cs02pr",
+        ageLabel: "3 hours ago", sourceUrl: "https://g2.com/cloudsync",
+        distribution: {5: 98, 4: 38, 3: 12, 2: 5, 1: 3}
+      },
+      "DataFlow Analytics": {
+        source: "Capterra", reviews: 89, verified: 256, rating: 3.8,
+        dateRange: "Jan 2024 – May 2024", sessionId: "#mn34jk",
+        ageLabel: "Yesterday", sourceUrl: "https://capterra.com/dataflow",
+        distribution: {5: 156, 4: 72, 3: 38, 2: 12, 1: 6}
+      },
+      "SecureVault": {
+        source: "Trustpilot", reviews: 412, verified: 380, rating: 4.1,
+        dateRange: "Dec 2023 – May 2024", sessionId: "#sv05dy",
+        ageLabel: "5 days ago", sourceUrl: "https://trustpilot.com/securevault",
+        distribution: {5: 220, 4: 100, 3: 50, 2: 25, 1: 17}
+      },
+      "TaskMaster AI": {
+        source: "App Store", reviews: 234, verified: 234, rating: 4.7,
+        dateRange: "Mar 2024 – May 2024", sessionId: "#tm07wk",
+        ageLabel: "1 week ago", sourceUrl: "https://apps.apple.com/taskmaster",
+        distribution: {5: 180, 4: 38, 3: 10, 2: 4, 1: 2}
+      }
+    };
+
+    let reviewData = {}; // generated review arrays per session
+    let currentProduct = null;
+
+    function generateReviews(name, total) {
+      const samples = [
+        "Excellent platform with intuitive interface. Setup was fast.",
+        "Reliable system but customer support response time could be faster.",
+        "Great features for enterprise users. Worth the price.",
+        "Easy to use and well-documented. Would recommend.",
+        "Pricing is a bit high but the value justifies it.",
+        "Support team has been very responsive to our queries.",
+        "Some bugs in the latest update but generally solid."
+      ];
+      return Array.from({length: total}, (_, i) => ({
+        rating: Math.random() > 0.25 ? 5 : (Math.random() > 0.5 ? 4 : 3),
+        text: samples[i % samples.length],
+        date: "Imported",
+        author: `User ${i+1}`
+      }));
+    }
+
+    function sourceBadgeColor(source) {
+      const map = {
+        "Trustpilot": "bg-emerald-100 text-emerald-700",
+        "G2": "bg-orange-100 text-orange-700",
+        "Capterra": "bg-blue-100 text-blue-700",
+        "App Store": "bg-slate-100 text-slate-700"
+      };
+      return map[source] || "bg-violet-100 text-violet-700";
+    }
+
+    function renderProductList() {
+      const container = document.getElementById('product-list');
+      const names = Object.keys(sessions);
+      document.getElementById('session-count').textContent = `${names.length} total`;
+      container.innerHTML = names.map(name => {
+        const s = sessions[name];
+        const isActive = name === currentProduct;
+        return `
+          <div onclick="selectProduct('${name}')" class="session-item px-4 py-3 rounded-2xl cursor-pointer ${isActive ? 'active' : ''}">
+            <div class="flex justify-between items-start mb-2">
+              <span class="font-semibold text-slate-800">${name}</span>
+              <span class="text-xs font-semibold text-violet-600">${s.rating.toFixed(1)}★</span>
+            </div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] px-2 py-0.5 rounded-md ${sourceBadgeColor(s.source)} font-medium">${s.source}</span>
+              <span class="text-xs text-slate-500">${s.reviews.toLocaleString()} reviews</span>
+            </div>
+            <p class="text-xs text-slate-400">${s.ageLabel}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectProduct(name) {
+      currentProduct = name;
+      const s = sessions[name];
+      if (!reviewData[name]) reviewData[name] = generateReviews(name, s.reviews);
+
+      document.getElementById('new-session-view').classList.add('hidden');
+      document.getElementById('analysis-view').classList.remove('hidden');
+      document.getElementById('analysis-view').classList.add('flex-1');
+
+      // Header
+      document.getElementById('product-title').textContent = name;
+      document.getElementById('product-rating').textContent = s.rating.toFixed(1);
+      document.getElementById('product-source-link').href = s.sourceUrl;
+
+      const badge = document.getElementById('product-source-badge');
+      badge.textContent = s.source;
+      badge.className = `source-badge ${sourceBadgeColor(s.source)}`;
+
+      // Star icons next to rating
+      const filled = Math.round(s.rating);
+      let stars = '';
+      for (let i = 0; i < 5; i++) {
+        stars += i < filled ? '★' : '<span class="text-slate-300">★</span>';
+      }
+      document.getElementById('rating-stars').innerHTML = stars;
+
+      // Stats
+      document.getElementById('stat-reviews').textContent = s.reviews.toLocaleString();
+      document.getElementById('stat-verified').textContent = s.verified.toLocaleString();
+      document.getElementById('stat-daterange').textContent = s.dateRange;
+      document.getElementById('stat-sessionid').textContent = s.sessionId;
+
+      // Reviews count in tab
+      document.getElementById('reviews-count').textContent = `(${Math.min(s.reviews, 20)})`;
+
+      renderStarDistribution(s);
+      renderAllReviews(reviewData[name]);
+      resetChat(name, s);
+      renderProductList();
+      switchTab(0);
+    }
+
+    function renderStarDistribution(session) {
+      const counts = session.distribution;
+      const total = Object.values(counts).reduce((a,b) => a+b, 0);
+      let html = '';
+      for (let i = 5; i >= 1; i--) {
+        const perc = total ? Math.round((counts[i] / total) * 100) : 0;
+        html += `
+          <div class="flex items-center gap-4">
+            <span class="w-8 text-right font-medium text-sm">${i}★</span>
+            <div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-3 bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full" style="width: ${perc}%"></div>
+            </div>
+            <span class="w-12 text-right text-sm font-medium">${counts[i].toLocaleString()}</span>
+          </div>`;
+      }
+      document.getElementById('star-distribution').innerHTML = html;
+    }
+
+    function renderAllReviews(reviews) {
+      const container = document.getElementById('reviews-list');
+      container.innerHTML = reviews.slice(0, 20).map((r, i) => `
+        <div class="glass-card rounded-3xl p-6">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <span class="text-2xl text-amber-400">${'★'.repeat(r.rating)}${'<span class="text-slate-200">★</span>'.repeat(5-r.rating)}</span>
+              <p class="text-sm text-slate-500 mt-1">${r.author} • <span class="text-xs">[r:${i+1}]</span></p>
+            </div>
+            <span class="text-xs text-slate-500">${r.date}</span>
+          </div>
+          <p class="text-slate-700">${r.text}</p>
+        </div>
+      `).join('');
+    }
+
+    function switchTab(n) {
+      document.getElementById('chat-panel').classList.toggle('hidden', n !== 0);
+      document.getElementById('reviews-panel').classList.toggle('hidden', n !== 1);
+      const chatBtn = document.getElementById('tab-chat');
+      const reviewsBtn = document.getElementById('tab-reviews');
+      chatBtn.classList.toggle('bg-white', n === 0);
+      chatBtn.classList.toggle('text-violet-700', n === 0);
+      chatBtn.classList.toggle('shadow', n === 0);
+      chatBtn.classList.toggle('text-slate-500', n !== 0);
+      reviewsBtn.classList.toggle('bg-white', n === 1);
+      reviewsBtn.classList.toggle('text-violet-700', n === 1);
+      reviewsBtn.classList.toggle('shadow', n === 1);
+      reviewsBtn.classList.toggle('text-slate-500', n !== 1);
+    }
+
+    function resetChat(name, s) {
+      const messages = document.getElementById('chat-messages');
+      messages.innerHTML = `
+        <div class="chat-bubble">
+          <div class="bg-white border border-violet-100 max-w-[80%] px-5 py-3 rounded-3xl">
+            I've successfully analyzed ${s.reviews.toLocaleString()} reviews for ${name}. You can ask me questions about customer sentiment, common complaints, or specific feedback themes.
+          </div>
+        </div>
+      `;
+    }
+
+    function addUserMessage(text) {
+      const messages = document.getElementById('chat-messages');
+      messages.innerHTML += `
+        <div class="chat-bubble flex justify-end">
+          <div class="bg-gradient-to-r from-violet-600 to-violet-500 text-white max-w-[75%] px-5 py-3 rounded-3xl shadow-md">${text}</div>
+        </div>`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addAssistantMessage(html) {
+      const messages = document.getElementById('chat-messages');
+      messages.innerHTML += `
+        <div class="chat-bubble">
+          <div class="bg-white border border-violet-100 max-w-[85%] px-5 py-3 rounded-3xl">${html}</div>
+        </div>`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function cite(n) {
+      return `<span class="citation-chip">[r:${n}]</span>`;
+    }
+
+    function generateReply(question) {
+      const q = question.toLowerCase();
+      if (q.includes('love') || q.includes('like') || q.includes('positive') || q.includes('praise')) {
+        return `Based on the reviews, customers consistently praise the <b>ease of use</b> and <b>excellent customer support</b>. The most mentioned positive aspects are:
+          <ul class="mt-3 space-y-1">
+            <li>• <b>Intuitive interface</b> – Mentioned in ${cite(5)} ${cite(23)} ${cite(47)}</li>
+            <li>• <b>Responsive support team</b> – Highlighted in ${cite(12)} ${cite(34)}</li>
+            <li>• <b>Fast setup process</b> – Praised in ${cite(8)} ${cite(19)}</li>
+          </ul>
+          <p class="mt-3">The reviews show an average rating of ${sessions[currentProduct].rating.toFixed(1)} stars, with ${Math.round(sessions[currentProduct].verified/sessions[currentProduct].reviews*100)}% being verified purchases.</p>`;
+      }
+      if (q.includes('complaint') || q.includes('issue') || q.includes('problem') || q.includes('negative')) {
+        return `The most common complaints across reviews are:
+          <ul class="mt-3 space-y-1">
+            <li>• <b>Slow support response times</b> on lower-tier plans – ${cite(42)} ${cite(71)}</li>
+            <li>• <b>Occasional bugs</b> after major updates – ${cite(28)} ${cite(55)}</li>
+            <li>• <b>Steep learning curve</b> for advanced features – ${cite(63)}</li>
+          </ul>`;
+      }
+      if (q.includes('support')) {
+        return `Support quality is mixed. Premium-tier customers report fast responses (under 2 hours) in ${cite(12)} ${cite(34)}, while free-tier users describe waits of 24-48 hours in ${cite(42)} ${cite(71)}.`;
+      }
+      if (q.includes('pric') || q.includes('cost')) {
+        return `Pricing feedback is split: enterprise users find the value justifies the cost ${cite(19)}, but small teams cite the price as a barrier to upgrading ${cite(63)} ${cite(82)}.`;
+      }
+      return `Based on the reviews, customers love the reliability but want faster support response times. Top themes: ease of use ${cite(5)}, support speed ${cite(42)}, pricing tier flexibility ${cite(63)}.`;
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      addUserMessage(text);
+      input.value = '';
+      setTimeout(() => addAssistantMessage(generateReply(text)), 600);
+    }
+
+    function askSuggested(question) {
+      addUserMessage(question);
+      setTimeout(() => addAssistantMessage(generateReply(question)), 600);
+    }
+
+    // New Session view
+    function showNewSessionView() {
+      document.getElementById('analysis-view').classList.add('hidden');
+      document.getElementById('new-session-view').classList.remove('hidden');
+      document.getElementById('new-session-view').classList.add('flex-1');
+    }
+
+    function ingestReviews() {
+      const url = document.getElementById('url-input').value.trim();
+      const source = document.getElementById('source-select').value;
+
+      let name = "New Product " + (Object.keys(sessions).length + 1);
+      if (url.toLowerCase().includes("capterra")) name = "Capterra Import";
+      else if (url.toLowerCase().includes("g2.com")) name = "G2 Import";
+      else if (url.toLowerCase().includes("trustpilot")) name = "Trustpilot Import";
+
+      const total = 3247;
+      sessions[name] = {
+        source, reviews: total, verified: Math.floor(total * 0.9), rating: 4.3,
+        dateRange: "Jan 2024 – May 2024",
+        sessionId: "#" + Math.random().toString(36).slice(2, 8),
+        ageLabel: "just now",
+        sourceUrl: url || "#",
+        distribution: {5: 1420, 4: 980, 3: 510, 2: 210, 1: 127}
+      };
+      reviewData[name] = generateReviews(name, total);
+      selectProduct(name);
+    }
+
+    // Dropzone wiring
+    function wireDropzone() {
+      const dz = document.getElementById('dropzone');
+      const input = document.getElementById('file-input');
+      dz.addEventListener('click', () => input.click());
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault();
+        dz.classList.remove('dragover');
+        if (e.dataTransfer.files.length) ingestReviews();
+      });
+      input.addEventListener('change', () => { if (input.files.length) ingestReviews(); });
+    }
+
+    // Initialize
+    window.onload = () => {
+      renderProductList();
+      selectProduct("DataFlow Analytics");
+      wireDropzone();
+
+      const chatInput = document.getElementById('chat-input');
+      chatInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+      });
+    };
+  </script>
+</body>
+</html>
