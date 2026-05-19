@@ -32,8 +32,8 @@ export default function TabsClient({ chatPanel, reviewsPanel, reviewCount }: Pro
         </button>
       </div>
 
-      {tab === 'chat' && chatPanel}
-      {tab === 'reviews' && reviewsPanel}
+      <div className={tab === 'chat' ? '' : 'hidden'}>{chatPanel}</div>
+      <div className={tab === 'reviews' ? '' : 'hidden'}>{reviewsPanel}</div>
     </>
   );
 }
