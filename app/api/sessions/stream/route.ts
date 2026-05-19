@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
         const aggregates = computeAggregates(result);
         const sessionId = uuidv4();
-        const session = insertSession({
+        const session = await insertSession({
           id: sessionId,
           source,
           sourceUrl: result.sourceUrl || undefined,
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
           ingestedAt: new Date().toISOString(),
           ...aggregates,
         });
-        insertReviews(sessionId, result.reviews);
+        await insertReviews(sessionId, result.reviews);
 
         send('done', { sessionId: session.id, count: result.reviews.length });
       } catch (err) {

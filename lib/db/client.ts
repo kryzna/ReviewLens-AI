@@ -1,21 +1,28 @@
-import Database from 'better-sqlite3';
+import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 
-const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'reviewlens.db');
+// @ts-ignore — global singleton survives Next.js hot-reload
+const globalWithPg = global as typeof globalThis & { _pgPool?: Pool };
 
-let _db: Database.Database | null = null;
+export function getPool(): Pool {
+  if (!globalWithPg._pgPool) {
+    globalWithPg._pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+  }
+  return globalWithPg._pgPool;
+}
 
-export function getDb(): Database.Database {
-  if (_db) return _db;
+let _initPromise: Promise<void> | null = null;
 
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  _db = new Database(DB_PATH);
-  _db.pragma('journal_mode = WAL');
-  _db.pragma('foreign_keys = ON');
-
-  const schema = fs.readFileSync(path.join(process.cwd(), 'lib', 'db', 'schema.sql'), 'utf8');
-  _db.exec(schema);
-
-  return _db;
+export function initDb(): Promise<void> {
+  if (!_initPromise) {
+    _initPromise = (async () => {
+      const schema = fs.readFileSync(
+        path.join(process.cwd(), 'lib', 'db', 'schema.sql'),
+        'utf8'
+      );
+      await getPool().query(schema);
+    })();
+  }
+  return _initPromise;
 }

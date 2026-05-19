@@ -9,7 +9,7 @@ import { ScraperError, IngestError, type Source } from '@/lib/types';
 
 export async function GET() {
   try {
-    const sessions = listSessions();
+    const sessions = await listSessions();
     return NextResponse.json({ sessions });
   } catch (err) {
     console.error(err);
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     const aggregates = computeAggregates(result);
     const sessionId = uuidv4();
 
-    const session = insertSession({
+    const session = await insertSession({
       id: sessionId,
       source,
       sourceUrl: result.sourceUrl || undefined,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       ...aggregates,
     });
 
-    insertReviews(sessionId, result.reviews);
+    await insertReviews(sessionId, result.reviews);
 
     return NextResponse.json({ sessionId: session.id }, { status: 201 });
   } catch (err) {

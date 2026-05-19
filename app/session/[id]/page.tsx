@@ -12,12 +12,12 @@ export default async function SessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = getSession(id);
+  const session = await getSession(id);
   if (!session) notFound();
 
-  const reviews = getReviews(id, 0, 20);
-  const allReviews = getAllReviews(id);
-  const messages = getMessages(id);
+  const reviews = await getReviews(id, 0, 20);
+  const allReviews = await getAllReviews(id);
+  const messages = await getMessages(id);
 
   return (
     <div className="flex h-screen">

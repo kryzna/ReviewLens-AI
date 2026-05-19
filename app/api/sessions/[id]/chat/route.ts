@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  const session = getSession(id);
+  const session = await getSession(id);
   if (!session) return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
 
   const body = await req.json() as { content?: string };
@@ -26,11 +26,11 @@ export async function POST(
     throw err;
   }
 
-  const reviews = getAllReviews(id);
-  const history = getMessages(id);
+  const reviews = await getAllReviews(id);
+  const history = await getMessages(id);
 
   const now = new Date().toISOString();
-  insertMessage({ sessionId: id, role: 'user', content, citations: [], createdAt: now });
+  await insertMessage({ sessionId: id, role: 'user', content, citations: [], createdAt: now });
 
   const encoder = new TextEncoder();
 
@@ -51,7 +51,7 @@ export async function POST(
           (token) => send('token', { text: token })
         );
 
-        const assistantMsg = insertMessage({
+        const assistantMsg = await insertMessage({
           sessionId: id,
           role: 'assistant',
           content: replyContent,

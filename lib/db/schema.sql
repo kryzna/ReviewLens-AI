@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   verified_count INTEGER NOT NULL DEFAULT 0,
   date_min       TEXT,
   date_max       TEXT,
-  rating_avg     REAL,
+  rating_avg     DOUBLE PRECISION,
   rating_dist    TEXT NOT NULL
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   date             TEXT,
   text             TEXT NOT NULL,
   source_url       TEXT,
-  verified         INTEGER NOT NULL DEFAULT 0,
+  verified         BOOLEAN NOT NULL DEFAULT FALSE,
   extra            TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_reviews_session ON reviews(session_id);
