@@ -1,4 +1,4 @@
-import type { Scraper, ScrapeResult } from '@/lib/types';
+import type { Scraper, ScrapeResult, ProgressCallback } from '@/lib/types';
 import { ScraperError } from '@/lib/types';
 
 export const googlePlayScraper: Scraper = {
@@ -14,10 +14,11 @@ export const googlePlayScraper: Scraper = {
     }
   },
 
-  async scrape(url: string, cap = 500): Promise<ScrapeResult> {
+  async scrape(url: string, cap = 500, onProgress?: ProgressCallback): Promise<ScrapeResult> {
     const { searchParams } = new URL(url);
     const appId = searchParams.get('id');
     if (!appId) throw new ScraperError('Google Play: could not extract app ID from URL.');
+    onProgress?.({ type: 'navigating', source: 'Google Play' });
 
     const country = searchParams.get('gl') ?? 'us';
     const lang = searchParams.get('hl') ?? 'en';
@@ -70,6 +71,8 @@ export const googlePlayScraper: Scraper = {
         ...(r.replyText ? { devReply: { text: r.replyText, date: r.replyDate } } : {}),
       },
     })).filter(r => r.text.length > 0);
+
+    onProgress?.({ type: 'extracting', count: reviews.length, cap });
 
     if (reviews.length === 0) {
       throw new ScraperError('Google Play: no reviews found.');

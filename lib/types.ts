@@ -42,9 +42,17 @@ export interface ScrapeResult {
   reviews: Omit<Review, 'id' | 'sessionId'>[];
 }
 
+export type ProgressEvent =
+  | { type: 'navigating'; source: string }
+  | { type: 'page-start'; pageNum: number; totalPages: number }
+  | { type: 'page-done'; pageNum: number; totalPages: number; reviewCount: number }
+  | { type: 'extracting'; count: number; cap: number };
+
+export type ProgressCallback = (evt: ProgressEvent) => void;
+
 export interface Scraper {
   matches(url: string): boolean;
-  scrape(url: string, cap: number): Promise<ScrapeResult>;
+  scrape(url: string, cap: number, onProgress?: ProgressCallback): Promise<ScrapeResult>;
 }
 
 export class ScraperError extends Error {

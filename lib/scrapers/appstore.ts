@@ -1,4 +1,4 @@
-import type { Scraper, ScrapeResult } from '@/lib/types';
+import type { Scraper, ScrapeResult, ProgressCallback } from '@/lib/types';
 import { ScraperError } from '@/lib/types';
 
 export const appStoreScraper: Scraper = {
@@ -11,9 +11,10 @@ export const appStoreScraper: Scraper = {
     }
   },
 
-  async scrape(url: string, cap = 500): Promise<ScrapeResult> {
+  async scrape(url: string, cap = 500, onProgress?: ProgressCallback): Promise<ScrapeResult> {
     const appIdMatch = url.match(/\/id(\d+)/);
     if (!appIdMatch) throw new ScraperError('App Store: could not extract app ID from URL.');
+    onProgress?.({ type: 'navigating', source: 'App Store' });
 
     const appId = appIdMatch[1];
     const countryMatch = new URL(url).pathname.match(/^\/([a-z]{2})\//);
@@ -56,6 +57,7 @@ export const appStoreScraper: Scraper = {
 
         reviews.push({ author, rating, date, text, verified: true, sourceReviewId, sourceUrl: url });
       }
+      onProgress?.({ type: 'extracting', count: reviews.length, cap });
     }
 
     if (reviews.length === 0) {

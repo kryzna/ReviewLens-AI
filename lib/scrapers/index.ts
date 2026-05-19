@@ -1,4 +1,4 @@
-import type { Scraper, ScrapeResult } from '@/lib/types';
+import type { Scraper, ScrapeResult, ProgressCallback } from '@/lib/types';
 import { ScraperError } from '@/lib/types';
 import { trustpilotScraper } from './trustpilot';
 import { appStoreScraper } from './appstore';
@@ -16,7 +16,7 @@ export function findScraper(url: string): Scraper {
   return scraper;
 }
 
-export async function scrapeUrl(url: string, cap = 500): Promise<ScrapeResult> {
+export async function scrapeUrl(url: string, cap = 500, onProgress?: ProgressCallback): Promise<ScrapeResult> {
   const scraper = findScraper(url);
-  return scraper.scrape(url, cap);
+  return scraper.scrape(url, cap, onProgress);
 }
