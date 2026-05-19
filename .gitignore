@@ -242,3 +242,7 @@ data/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+.claude
+.mcp.json
+.opencode
+.codex
