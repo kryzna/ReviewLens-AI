@@ -93,12 +93,12 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
       });
       const pageUrl = pageNum === 1 ? sourceUrl : `${sourceUrl}?page=${pageNum}`;
       await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
-      // Cloudflare challenge ("Just a moment...") auto-resolves via JS; wait for it
-      const title = await page.title();
-      if (title.includes('Just a moment')) {
-        await page.waitForFunction(() => !document.title.includes('Just a moment'), { timeout: 20_000 }).catch(() => {});
-      }
-      await page.waitForTimeout(8_000);
+      // Cloudflare challenges each request; wait up to 30s for challenge to clear
+      await page.waitForFunction(
+        () => !document.title.includes('Just a moment'),
+        { timeout: 30_000 }
+      ).catch(() => {});
+      await page.waitForTimeout(5_000);
 
       const jsonLd = await page.evaluate(() => {
         const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
@@ -136,18 +136,12 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
     onProgress?.({ type: 'page-done', pageNum: 1, totalPages, reviewCount: reviews.length });
 
     if (totalPages > 1) {
-      const remaining = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-      const pageResults = await Promise.all(
-        remaining.map(async (pageNum) => {
-          const { jsonLd, dates } = await fetchPage(pageNum, totalPages);
-          const extracted = extractReviews(jsonLd?.review ?? [], dates, sourceUrl, cap, reviews.length);
-          onProgress?.({ type: 'page-done', pageNum, totalPages, reviewCount: extracted.length });
-          return extracted;
-        })
-      );
-      for (const batch of pageResults) {
+      for (let pageNum = 2; pageNum <= totalPages; pageNum++) {
         if (reviews.length >= cap) break;
-        reviews.push(...batch.slice(0, cap - reviews.length));
+        const { jsonLd, dates } = await fetchPage(pageNum, totalPages);
+        const extracted = extractReviews(jsonLd?.review ?? [], dates, sourceUrl, cap, reviews.length);
+        onProgress?.({ type: 'page-done', pageNum, totalPages, reviewCount: extracted.length });
+        reviews.push(...extracted.slice(0, cap - reviews.length));
       }
     }
 
