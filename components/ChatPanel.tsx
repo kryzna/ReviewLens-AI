@@ -26,10 +26,14 @@ interface Props {
   initialMessages: Message[];
 }
 
+const CITATIONS_INITIAL = 3;
+const CITATIONS_STEP = 3;
+
 export default function ChatPanel({ sessionId, reviews, initialMessages }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [citationLimit, setCitationLimit] = useState<Map<string, number>>(new Map());
   const bottomRef = useRef<HTMLDivElement>(null);
   const reviewMap = new Map(reviews.map(r => [r.id, r]));
 
@@ -156,22 +160,35 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
             <div key={msg.id} className="chat-bubble">
               <div className="bg-white border border-violet-100 max-w-[85%] px-5 py-3 rounded-3xl leading-relaxed">
                 <p className="whitespace-pre-wrap">{text}</p>
-                {cited.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-violet-50 space-y-2">
-                    <p className="text-xs font-medium text-slate-400">Sources</p>
-                    {cited.map((r, i) => (
-                      <div key={r.id} className="text-xs text-slate-500 bg-violet-50 rounded-xl px-3 py-2">
-                        <span className="font-medium text-violet-700">#{i + 1}</span>
-                        {r.author && <span className="ml-1 text-slate-600">{r.author}</span>}
-                        {r.rating && <span className="ml-1">· {r.rating}★</span>}
-                        {r.sourceUrl
-                          ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-violet-500 underline">{r.text.slice(0, 80)}…</a>
-                          : <span className="ml-2">{r.text.slice(0, 80)}…</span>
-                        }
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {cited.length > 0 && (() => {
+                  const limit = citationLimit.get(msg.id) ?? CITATIONS_INITIAL;
+                  const visible = cited.slice(0, limit);
+                  const remaining = cited.length - limit;
+                  return (
+                    <div className="mt-3 pt-3 border-t border-violet-50 space-y-2">
+                      <p className="text-xs font-medium text-slate-400">Sources</p>
+                      {visible.map((r, i) => (
+                        <div key={r.id} className="text-xs text-slate-500 bg-violet-50 rounded-xl px-3 py-2">
+                          <span className="font-medium text-violet-700">#{i + 1}</span>
+                          {r.author && <span className="ml-1 text-slate-600">{r.author}</span>}
+                          {r.rating && <span className="ml-1">· {r.rating}★</span>}
+                          {r.sourceUrl
+                            ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-violet-500 underline">{r.text.slice(0, 80)}…</a>
+                            : <span className="ml-2">{r.text.slice(0, 80)}…</span>
+                          }
+                        </div>
+                      ))}
+                      {remaining > 0 && (
+                        <button
+                          onClick={() => setCitationLimit(prev => new Map(prev).set(msg.id, limit + CITATIONS_STEP))}
+                          className="text-xs text-violet-500 hover:text-violet-700 font-medium"
+                        >
+                          Show {Math.min(remaining, CITATIONS_STEP)} more source{Math.min(remaining, CITATIONS_STEP) !== 1 ? 's' : ''}…
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );
