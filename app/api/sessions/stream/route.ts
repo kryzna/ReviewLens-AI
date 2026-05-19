@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
         let source: Source = 'trustpilot';
         if (url.includes('apps.apple.com')) source = 'appstore';
         else if (url.includes('play.google.com')) source = 'googleplay';
+        else if (url.includes('capterra.com')) source = 'capterra';
 
         const result = await scrapeUrl(url, cap, (evt) => {
           if (evt.type === 'navigating') {

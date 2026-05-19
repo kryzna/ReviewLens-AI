@@ -127,9 +127,10 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
     if (!page1ld) throw new ScraperError(ANTI_BOT_MSG);
 
     const subjectName: string = page1ld.name ?? 'Unknown';
-    const reviewCount: number = page1ld.aggregateRating?.reviewCount ?? REVIEWS_PER_PAGE;
+    const reviewCount: number = page1ld.aggregateRating?.reviewCount ?? cap;
     const perPage = page1ld.review?.length ?? REVIEWS_PER_PAGE;
-    const totalPages = Math.min(Math.ceil(cap / perPage), Math.ceil(reviewCount / perPage));
+    const maxPagesByCount = Math.ceil(reviewCount / perPage);
+    const totalPages = Math.min(Math.ceil(cap / perPage), maxPagesByCount);
 
     const reviews = extractReviews(page1ld.review ?? [], page1Dates, sourceUrl, cap, 0);
     onProgress?.({ type: 'page-done', pageNum: 1, totalPages, reviewCount: reviews.length });

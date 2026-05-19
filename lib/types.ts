@@ -1,4 +1,4 @@
-export type Source = 'trustpilot' | 'appstore' | 'googleplay' | 'upload';
+export type Source = 'trustpilot' | 'appstore' | 'googleplay' | 'capterra' | 'upload';
 
 export interface Review {
   id: string;
