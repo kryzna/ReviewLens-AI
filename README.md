@@ -2,19 +2,22 @@
 
 Paste a review URL or upload a CSV/JSONL file — get an AI-powered Q&A interface grounded in those reviews.
 
+Live: **https://reviewlens-ai-f6lj.onrender.com**
+
 ## Features
 
-- **URL ingest**: Trustpilot, Apple App Store, Google Play
-- **File upload**: CSV or JSONL (up to 500 reviews)
+- **URL ingest**: Trustpilot and Capterra (headless Chromium, Cloudflare-safe)
+- **File upload**: CSV or JSONL (up to 500 reviews, any source)
 - **Scoped Q&A**: every answer cites specific reviews via `[r:id]` chips
 - **Scope guard**: refuses off-topic questions; styled with amber refusal bubble
-- **Session history**: persisted in SQLite, survives restarts
+- **Session history**: persisted in PostgreSQL, survives restarts
 
 ## Quick start
 
 ```bash
-cp .env.example .env          # add ANTHROPIC_API_KEY
+cp .env.example .env.local     # add ANTHROPIC_API_KEY and DATABASE_URL
 npm install
+npx playwright install chromium
 npm run dev
 ```
 
@@ -24,8 +27,10 @@ Open `http://localhost:3000`.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Claude API key |
-| `DB_PATH` | No | SQLite path (default: `./data/reviewlens.db`) |
+| `ANTHROPIC_API_KEY` | Yes | Claude API key (console.anthropic.com) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+
+For local dev, `DATABASE_URL` can point to a local Postgres instance or a free Neon/Supabase database.
 
 ## File upload format
 
@@ -44,47 +49,60 @@ Bob,2,2024-02-01,Stopped working after update
 {"author":"Bob","rating":2,"text":"Stopped working after update"}
 ```
 
-Sample fixtures in `fixtures/`.
+## Scraping
 
-## Trustpilot scraping
+### Trustpilot
+Uses headless Chromium (Playwright) to bypass Cloudflare. Pages fetched in parallel (~25s for 10 pages). Extracts from `__NEXT_DATA__` JSON.
 
-Uses headless Chromium (Playwright) to bypass Cloudflare. Requires Chrome or Chromium installed:
+### Capterra
+Sequential page fetching (Cloudflare challenges every page). Extracts from `SoftwareApplication` JSON-LD + DOM date extraction. ~35s/page at worst.
 
-- **macOS**: `brew install --cask google-chrome`
-- **Linux**: `apt install chromium-browser` or `snap install chromium`
-- **Docker/Fly**: Chromium bundled in image via `apk add chromium`
+Both scrapers require Chromium:
+- **macOS**: `npx playwright install chromium`
+- **Linux**: `apt install chromium-browser`
+- **Docker**: bundled via `apk add chromium`
 
-Falls back to plain HTTP fetch if Chromium not found — likely blocked by Cloudflare. If blocked, use file upload instead.
+> **ToS note**: Scraping review platforms may violate their Terms of Service. Use for personal or research purposes only.
 
-> **ToS note**: Trustpilot's Terms of Service prohibit automated scraping. Use for personal/research purposes only.
+## Architecture
 
-## Deploy to Fly.io
+- **Framework**: Next.js 15 App Router + TypeScript + Tailwind
+- **AI**: Anthropic Claude (claude-sonnet-4-6) with prompt caching (5-min TTL)
+- **DB**: PostgreSQL via `pg` (node-postgres); schema auto-applied on cold start
+- **Scraping**: playwright-core with system Chromium (no browser auto-download)
+- **Q&A strategy**: stuff-in-context (no RAG) — all reviews in system prompt per turn
 
-```bash
-fly auth login
-fly launch --no-deploy          # creates app + volume
-fly secrets set ANTHROPIC_API_KEY=sk-ant-...
-fly deploy
-```
+Session IDs are UUIDs. Anyone with a session URL can read its history — no auth.
 
-App runs at `https://<app-name>.fly.dev`. No authentication — anyone with the URL can read all sessions and chat history.
+## Deploy to Render
 
-## Privacy
-
-Sessions and chat history are stored unencrypted in SQLite on the Fly volume. Do not ingest reviews containing personal data you are not authorized to process.
-
-## Limitations (non-goals)
-
-- No auth / access control
-- No multi-platform per session
-- No streaming responses
-- No search within reviews
-- Single-region single-VM; not designed for concurrent load
+1. Push to GitHub
+2. New Render project → Web Service (Docker) from repo
+3. Add PostgreSQL database — `DATABASE_URL` auto-injected
+4. Set `ANTHROPIC_API_KEY` env var
+5. Deploy
 
 ## Running tests
 
 ```bash
 npm test
+
+# Integration tests (live network, require Chromium)
+npx jest lib/scrapers/trustpilot.test.ts --testNamePattern="@integration"   # ~90s
+npx jest lib/scrapers/capterra.test.ts --testNamePattern="@integration"     # ~120s
 ```
 
-16 unit tests covering scrapers, citation parsing, and ingest normalization.
+## Assumptions
+
+- 500 review cap per session keeps ingestion under ~60s and token cost bounded
+- Stuff-in-context Q&A is sufficient at ≤500 reviews; revisit with embeddings if cap grows past ~5k
+- Single Postgres instance; not designed for concurrent load or horizontal scaling
+
+## Known limitations
+
+- No auth — anyone with a session URL can read its chat history
+- Scope guard (system prompt only) is bypassable by determined prompt injection
+- Capterra scraper is sequential due to Cloudflare; ~35s per page
+- No rate limiting on ingestion API — one user can trigger many Playwright instances
+- No pagination on Reviews tab beyond load-more (lags at 500+ reviews)
+- App Store and Google Play scrapers exist but have no integration tests and are not advertised in the UI
