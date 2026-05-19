@@ -116,7 +116,7 @@ export default function NewSessionForm() {
     <div className="max-w-2xl mx-auto py-12 px-8">
       <div className="text-center mb-10">
         <h1 className="text-4xl font-display font-bold mb-3">Start a New Analysis Session</h1>
-        <p className="text-slate-500">Import reviews from Trustpilot, App Store, or Google Play — or upload your own data</p>
+        <p className="text-slate-500">Import reviews from Trustpilot or Capterra — or upload your own data</p>
       </div>
 
       <div className="glass-card rounded-3xl p-8 shadow-xl shadow-violet-100">
@@ -132,7 +132,7 @@ export default function NewSessionForm() {
             className="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none"
           />
         </div>
-        <p className="text-xs text-slate-500 mb-4">Supports Trustpilot, Apple App Store, and Google Play URLs</p>
+        <p className="text-xs text-slate-500 mb-4">Supports Trustpilot and Capterra URLs</p>
 
         <div className="flex items-center gap-3 mb-6">
           <label className="text-sm font-medium text-slate-700 whitespace-nowrap">Max reviews</label>
