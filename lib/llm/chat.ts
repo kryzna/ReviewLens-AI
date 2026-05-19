@@ -36,12 +36,12 @@ export async function streamMessage(
 
   let fullContent = '';
 
-  const stream = await client.beta.promptCaching.messages.stream({
+  const stream = client.messages.stream({
     model: MODEL,
-    system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+    system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] as Parameters<typeof client.messages.create>[0]['system'],
     messages,
     max_tokens: MAX_TOKENS,
-  });
+  }, { headers: { 'anthropic-beta': 'prompt-caching-2024-07-31' } });
 
   stream.on('text', (text) => {
     onToken(text);
