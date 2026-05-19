@@ -3,7 +3,7 @@ _Last updated: 2026-05-19_
 
 ## What This Is
 
-Next.js 15 app that ingests product reviews (Trustpilot, App Store, Google Play, CSV/JSONL upload), stores them in SQLite, and lets users chat with Claude AI to analyze sentiment, themes, and patterns. Deployed target: Fly.io (Dockerfile present).
+Next.js 15 app that ingests product reviews (Trustpilot, Capterra, App Store, Google Play, CSV/JSONL upload), stores them in SQLite, and lets users chat with Claude AI to analyze sentiment, themes, and patterns. Deployed target: Fly.io (Dockerfile present).
 
 ---
 
@@ -33,10 +33,11 @@ app/
         chat/route.ts   # POST SSE: streaming chat response
         route.ts        # GET: session details
 lib/
-  types.ts              # All shared types (Review, Session, Message, ProgressEvent, Scraper)
+  types.ts              # All shared types (Review, Session, Message, ProgressEvent, Scraper, Source)
   db/                   # SQLite via better-sqlite3
   scrapers/
-    trustpilot.ts       # Playwright-based (parallelized, SSE progress)
+    trustpilot.ts       # Playwright-based (parallelized pages, SSE progress)
+    capterra.ts         # Playwright-based (sequential pages, JSON-LD extraction, CF-safe)
     appstore.ts         # RSS feed scraper
     googleplay.ts       # google-play-scraper npm package
     index.ts            # scrapeUrl() — selects correct scraper
@@ -49,12 +50,13 @@ lib/
   ingest/               # File parse (CSV, JSONL)
 components/
   NewSessionForm.tsx    # Ingestion UI (SSE EventSource, step list, page chips)
-  ChatPanel.tsx         # Chat UI (SSE fetch stream, citation display)
+  ChatPanel.tsx         # Chat UI (SSE fetch stream, paginated citation display)
   TabsClient.tsx        # Tab switcher (CSS hidden, preserves state)
 scripts/
   scrape-to-csv.ts      # CLI: scrape URL → CSV for upload testing
 features/
   trustpilot-scrape-tests/  # spec/plan/tasks for integration test feature
+  capterra-scraper/         # spec/plan/tasks for Capterra scraper feature
 ```
 
 ---
@@ -63,7 +65,7 @@ features/
 
 ### Ingestion — SSE not JSON
 `GET /api/sessions/stream?url=...&cap=...` returns `text/event-stream`. Events:
-- `navigating` — scraper started, navigating to source
+- `navigating` — scraper started
 - `page-start` — page N of M beginning
 - `page-done` — page N done, includes `reviewCount`
 - `saving` — writing to DB
@@ -72,41 +74,48 @@ features/
 
 Frontend uses `EventSource` in `NewSessionForm.tsx`.
 
-### Trustpilot Scraping — Parallel Pages
-Page 1 fetches sequentially (need total page count + metadata). Pages 2–N fetched via `Promise.all`. Old: ~13s/page × N. New: ~25s total for 10 pages.
+### Trustpilot — Parallel Pages
+Page 1 sequential (need metadata), pages 2–N via `Promise.all`. ~25s total for 10 pages vs ~336s sequential. Playwright required (Cloudflare blocks plain fetch). Uses `__NEXT_DATA__` JSON extraction.
 
-Playwright required (Cloudflare blocks plain fetch). Headless Chromium, no `DELAY_MS`.
+### Capterra — Sequential Pages, JSON-LD
+Capterra challenges EVERY page request with Cloudflare (even same browser session). Parallel fetching causes all pages 2–N to fail. Strategy:
+- Sequential page fetching (slower but reliable)
+- `waitForFunction(() => !document.title.includes('Just a moment'), { timeout: 30_000 })` per page
+- Extracts from `SoftwareApplication` JSON-LD: author, rating, reviewBody → text
+- DOM `div.typo-0.text-neutral-90` → date (position-matched to JSON-LD reviews)
+- `verified = true` for all (Capterra's platform claim)
+- 25 reviews/page, total pages = `min(ceil(cap/25), ceil(totalReviews/25))`
 
 ### Chat — Streaming + Prompt Caching
-`streamMessage()` in `lib/llm/chat.ts` uses `client.messages.stream()` with header `anthropic-beta: prompt-caching-2024-07-31`. System prompt tagged `cache_control: { type: 'ephemeral' }`. Cache TTL 5min — subsequent messages in same session pay ~0 on system prompt tokens.
+`streamMessage()` uses `client.messages.stream()` with `anthropic-beta: prompt-caching-2024-07-31`. System prompt tagged `cache_control: { type: 'ephemeral' }`. Cache TTL 5min.
 
-`POST /api/sessions/[id]/chat` returns SSE with events: `token`, `done`, `error`.
+`POST /api/sessions/[id]/chat` returns SSE: `token`, `done`, `error`.
+
+### Citation Display — Paginated
+ChatPanel shows first 3 citations per message. "Show 3 more sources…" reveals next 3. State tracked per message ID via `citationLimit` Map. Inline `[r:uuid]` tokens stripped, deduplicated.
 
 ### Tab State Fix
-`TabsClient.tsx` uses CSS `hidden` class instead of conditional rendering. ChatPanel stays mounted when user switches to Reviews tab — no history loss.
+`TabsClient.tsx` uses CSS `hidden` instead of conditional rendering. ChatPanel stays mounted when switching tabs — no history loss.
 
-### Citation Display
-LLM embeds `[r:uuid]` tokens inline. `parseMessage()` in `ChatPanel.tsx` strips them, deduplicates IDs, renders a "Sources" section below each assistant message with author, rating, and truncated review text.
+---
+
+## Source Type Mapping
+
+```ts
+type Source = 'trustpilot' | 'appstore' | 'googleplay' | 'capterra' | 'upload'
+```
+
+Detected in `stream/route.ts` by URL pattern. Error message: "Supported: Trustpilot, Capterra."
 
 ---
 
 ## Running Locally
 
 ```bash
-# Install deps (requires Node 20+)
 npm install
-
-# Copy env and add ANTHROPIC_API_KEY
-cp .env.example .env.local
-
-# Dev server
-npm run dev
-# → http://localhost:3000
-```
-
-Playwright needs Chromium:
-```bash
+cp .env.example .env.local   # add ANTHROPIC_API_KEY
 npx playwright install chromium
+npm run dev                   # → http://localhost:3000
 ```
 
 ---
@@ -114,61 +123,52 @@ npx playwright install chromium
 ## Tests
 
 ```bash
-# All tests
-npm test
-
-# Trustpilot integration tests (hits live Trustpilot, ~90s, needs network)
+# Trustpilot integration (live network, ~90s)
 npx jest lib/scrapers/trustpilot.test.ts --testNamePattern="@integration"
+
+# Capterra integration (live network, ~120s, sequential)
+npx jest lib/scrapers/capterra.test.ts --testNamePattern="@integration"
 ```
 
-Integration tests use `https://www.trustpilot.com/review/www.amazon.com`. 5 cases: happy path, field mapping, cap enforcement, pagination, invalid URL error.
+Capterra fixture: `https://www.capterra.com/p/169455/Zoho-Projects/`
+Trustpilot fixture: `https://www.trustpilot.com/review/www.amazon.com`
 
 ---
 
 ## Utility Scripts
 
 ```bash
-# Scrape URL to CSV (for testing upload flow)
 node_modules/.bin/tsx scripts/scrape-to-csv.ts [url] [cap] [output.csv]
-
-# Example
-node_modules/.bin/tsx scripts/scrape-to-csv.ts https://www.trustpilot.com/review/stripe.com 25 stripe-reviews.csv
 ```
-
-CSV columns: `author,rating,date,text,source_url,verified`
 
 ---
 
 ## Environment Variables
 
-| Var | Purpose |
-|-----|---------|
-| `ANTHROPIC_API_KEY` | Required. Claude API access |
+| Var | Required | Purpose |
+|-----|----------|---------|
+| `ANTHROPIC_API_KEY` | Yes | Claude API |
 
-No other secrets needed for local dev. SQLite DB auto-created at `data/reviews.db` on first run.
+SQLite DB auto-created at `data/reviews.db`.
 
 ---
 
-## What Was Built This Session
+## What Shipped This Session
 
-1. **Integration tests** — `lib/scrapers/trustpilot.test.ts` (5 tests, all passing)
-2. **CSV export script** — `scripts/scrape-to-csv.ts`
-3. **SSE ingestion progress** — new `app/api/sessions/stream/route.ts`, updated `NewSessionForm.tsx`
-4. **Max reviews input** — cap picker in ingestion UI (1–500, default 50)
-5. **Parallel page fetching** — Trustpilot pages 2–N via `Promise.all`, page-progress chips in UI
-6. **Tab state fix** — CSS hidden in `TabsClient.tsx`
-7. **Streaming chat** — SSE from `chat/route.ts`, real-time token updates in `ChatPanel.tsx`
-8. **Prompt caching** — system prompt cached with `anthropic-beta` header
-9. **Citation UI** — inline tokens stripped, "Sources" section rendered below messages
+1. Capterra scraper — JSON-LD + DOM hybrid, Cloudflare-safe sequential fetching
+2. Capterra pagination fix — `reviewCount` fallback was 25 (1 page), now defaults to `cap`
+3. Capterra source type — added `'capterra'` to `Source` union
+4. Citation pagination — show 3, expand by 3 on demand
+5. Integration tests — 5 passing for Capterra (57s)
 
 ---
 
 ## Known Gaps / Next Steps
 
-- No auth — anyone with URL can create sessions. Add Clerk or NextAuth if going multi-tenant.
-- SQLite won't scale beyond single instance. Migrate to Postgres (Fly Postgres or Neon) before horizontal scaling.
-- Trustpilot scraper is fragile — Playwright-based, depends on DOM structure. Add retry logic and alert on scrape failures.
-- No rate limiting on `/api/sessions/stream` — a single user can trigger many parallel Playwright instances.
-- App Store and Google Play scrapers have no integration tests.
-- No pagination on the Reviews tab — all reviews loaded at once. Will lag with 500+ reviews.
-- QA run not completed (session ended before /qa finished).
+- No auth — anyone with URL can create sessions
+- SQLite won't scale beyond single instance — migrate to Postgres before horizontal scaling
+- App Store and Google Play scrapers have no integration tests
+- Capterra scraper is sequential (Cloudflare constraint) — ~35s/page at 8s wait + CF resolution
+- No pagination on Reviews tab — all reviews loaded at once (lags at 500+)
+- No rate limiting on ingestion API — one user can trigger many Playwright instances
+- QA run never completed — app has not been systematically tested end-to-end
