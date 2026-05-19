@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, getAllReviews, getMessages, insertMessage } from '@/lib/db/repo';
-import { sendMessage } from '@/lib/llm/chat';
+import { streamMessage } from '@/lib/llm/chat';
 import { preCheck, PreCheckError } from '@/lib/guard/preCheck';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: NextRequest,
@@ -28,20 +30,50 @@ export async function POST(
   const history = getMessages(id);
 
   const now = new Date().toISOString();
-  const userMsg = insertMessage({ sessionId: id, role: 'user', content, citations: [], createdAt: now });
+  insertMessage({ sessionId: id, role: 'user', content, citations: [], createdAt: now });
 
-  try {
-    const { content: replyContent, citations } = await sendMessage(content, session, reviews, history);
-    const assistantMsg = insertMessage({
-      sessionId: id,
-      role: 'assistant',
-      content: replyContent,
-      citations,
-      createdAt: new Date().toISOString(),
-    });
-    return NextResponse.json({ message: assistantMsg });
-  } catch (err) {
-    console.error('LLM error:', err);
-    return NextResponse.json({ error: 'Failed to get a response. Please try again.' }, { status: 500 });
-  }
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: object) => {
+        controller.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+        );
+      };
+
+      try {
+        const { content: replyContent, citations } = await streamMessage(
+          content,
+          session,
+          reviews,
+          history,
+          (token) => send('token', { text: token })
+        );
+
+        const assistantMsg = insertMessage({
+          sessionId: id,
+          role: 'assistant',
+          content: replyContent,
+          citations,
+          createdAt: new Date().toISOString(),
+        });
+
+        send('done', { message: assistantMsg });
+      } catch (err) {
+        console.error('LLM error:', err);
+        send('error', { message: 'Failed to get a response. Please try again.' });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  });
 }

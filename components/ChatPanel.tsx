@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { Message, Review } from '@/lib/types';
-import CitationChip from './CitationChip';
 
 const SUGGESTIONS = [
   'Most common complaints',
@@ -11,20 +10,14 @@ const SUGGESTIONS = [
   'Support quality feedback',
 ];
 
-function parseContent(
-  content: string,
-  reviews: Review[]
-): React.ReactNode[] {
-  const reviewMap = new Map(reviews.map(r => [r.id, r]));
-  const parts = content.split(/(\[r:[a-f0-9-]{36}\])/g);
-  return parts.map((part, i) => {
-    const match = part.match(/^\[r:([a-f0-9-]{36})\]$/);
-    if (match) {
-      const review = reviewMap.get(match[1]);
-      return <CitationChip key={i} reviewId={match[1]} sourceUrl={review?.sourceUrl} />;
-    }
-    return <span key={i}>{part}</span>;
-  });
+function parseMessage(content: string): { text: string; citationIds: string[] } {
+  const ids: string[] = [];
+  const text = content.replace(/\[r:[a-f0-9-]{36}\]/g, (match) => {
+    const id = match.slice(3, -1);
+    if (!ids.includes(id)) ids.push(id);
+    return '';
+  }).replace(/\s{2,}/g, ' ').trim();
+  return { text, citationIds: ids };
 }
 
 interface Props {
@@ -38,6 +31,7 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const reviewMap = new Map(reviews.map(r => [r.id, r]));
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,6 +40,7 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
   async function send(text: string) {
     if (!text.trim() || loading) return;
     setInput('');
+
     const userMsg: Message = {
       id: `tmp-${Date.now()}`,
       sessionId,
@@ -54,7 +49,18 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
       citations: [],
       createdAt: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, userMsg]);
+
+    const streamingId = `streaming-${Date.now()}`;
+    const streamingMsg: Message = {
+      id: streamingId,
+      sessionId,
+      role: 'assistant',
+      content: '',
+      citations: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, userMsg, streamingMsg]);
     setLoading(true);
 
     try {
@@ -63,12 +69,46 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: text }),
       });
-      const data = await res.json() as { message?: Message; error?: string };
-      if (data.message) {
-        setMessages(prev => [...prev, data.message!]);
+
+      if (!res.body) throw new Error('No stream');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        let event = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            event = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6));
+            if (event === 'token') {
+              setMessages(prev => prev.map(m =>
+                m.id === streamingId ? { ...m, content: m.content + data.text } : m
+              ));
+            } else if (event === 'done') {
+              setMessages(prev => prev.map(m =>
+                m.id === streamingId ? data.message : m
+              ));
+            } else if (event === 'error') {
+              setMessages(prev => prev.map(m =>
+                m.id === streamingId ? { ...m, content: data.message } : m
+              ));
+            }
+            event = '';
+          }
+        }
       }
     } catch {
-      // keep user message visible, don't add error message
+      setMessages(prev => prev.filter(m => m.id !== streamingId));
     } finally {
       setLoading(false);
     }
@@ -87,25 +127,56 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
             </div>
           </div>
         )}
-        {messages.map(msg => (
-          <div key={msg.id} className={`chat-bubble ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
-            {msg.role === 'user' ? (
-              <div className="bg-gradient-to-r from-violet-600 to-violet-500 text-white max-w-[75%] px-5 py-3 rounded-3xl shadow-md">
-                {msg.content}
+        {messages.map(msg => {
+          if (msg.role === 'user') {
+            return (
+              <div key={msg.id} className="chat-bubble flex justify-end">
+                <div className="bg-gradient-to-r from-violet-600 to-violet-500 text-white max-w-[75%] px-5 py-3 rounded-3xl shadow-md">
+                  {msg.content}
+                </div>
               </div>
-            ) : isRefusal(msg.content) ? (
-              <div className="refusal-bubble flex items-start gap-2">
-                <span>🛡️</span>
-                <span>{stripRefusal(msg.content)}</span>
+            );
+          }
+
+          if (isRefusal(msg.content)) {
+            return (
+              <div key={msg.id} className="chat-bubble">
+                <div className="refusal-bubble flex items-start gap-2">
+                  <span>🛡️</span>
+                  <span>{stripRefusal(msg.content)}</span>
+                </div>
               </div>
-            ) : (
+            );
+          }
+
+          const { text, citationIds } = parseMessage(msg.content);
+          const cited = citationIds.map(id => reviewMap.get(id)).filter(Boolean) as Review[];
+
+          return (
+            <div key={msg.id} className="chat-bubble">
               <div className="bg-white border border-violet-100 max-w-[85%] px-5 py-3 rounded-3xl leading-relaxed">
-                {parseContent(msg.content, reviews)}
+                <p className="whitespace-pre-wrap">{text}</p>
+                {cited.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-violet-50 space-y-2">
+                    <p className="text-xs font-medium text-slate-400">Sources</p>
+                    {cited.map((r, i) => (
+                      <div key={r.id} className="text-xs text-slate-500 bg-violet-50 rounded-xl px-3 py-2">
+                        <span className="font-medium text-violet-700">#{i + 1}</span>
+                        {r.author && <span className="ml-1 text-slate-600">{r.author}</span>}
+                        {r.rating && <span className="ml-1">· {r.rating}★</span>}
+                        {r.sourceUrl
+                          ? <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-violet-500 underline">{r.text.slice(0, 80)}…</a>
+                          : <span className="ml-2">{r.text.slice(0, 80)}…</span>
+                        }
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
-        {loading && (
+            </div>
+          );
+        })}
+        {loading && messages[messages.length - 1]?.content === '' && (
           <div className="chat-bubble">
             <div className="bg-white border border-violet-100 px-5 py-3 rounded-3xl text-slate-400 w-fit animate-pulse">
               Thinking…
@@ -117,11 +188,7 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
 
       <div className="px-6 pb-4 flex flex-wrap gap-2">
         {SUGGESTIONS.map(s => (
-          <button
-            key={s}
-            onClick={() => send(s)}
-            className="px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm hover:bg-violet-100"
-          >
+          <button key={s} onClick={() => send(s)} className="px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm hover:bg-violet-100">
             {s}
           </button>
         ))}
