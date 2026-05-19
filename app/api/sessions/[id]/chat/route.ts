@@ -61,8 +61,9 @@ export async function POST(
 
         send('done', { message: assistantMsg });
       } catch (err) {
-        console.error('LLM error:', err);
-        send('error', { message: 'Failed to get a response. Please try again.' });
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('LLM error:', msg);
+        send('error', { message: `Error: ${msg}` });
       } finally {
         controller.close();
       }
