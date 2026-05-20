@@ -11,6 +11,25 @@ const CHROME_PATHS = [
   '/usr/bin/chromium',
 ];
 
+// Process items with at most `concurrency` in-flight at once.
+// Prevents OOM when cap=500 spawns 24+ parallel Playwright tabs or fetch requests.
+async function pooledMap<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  concurrency: number
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 export const trustpilotScraper: Scraper = {
   matches(url: string): boolean {
     try {
@@ -91,8 +110,7 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
   }
 
   try {
-    // Page 1 sequential — need subjectName + totalPages before launching parallel pages
-    const page1Props = await fetchPlaywrightPage(1, 1); // totalPages unknown yet, update after
+    const page1Props = await fetchPlaywrightPage(1, 1);
     const subjectName =
       page1Props.businessUnit?.displayName ||
       page1Props.businessUnit?.identifyingName ||
@@ -112,15 +130,17 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
 
     if (pagesNeeded > 1) {
       const remainingPageNums = Array.from({ length: pagesNeeded - 1 }, (_, i) => i + 2);
-      // Launch all remaining pages in parallel; each emits page-start + page-done individually
-      const pageResults = await Promise.all(
-        remainingPageNums.map(async (pageNum) => {
+      // 3 concurrent tabs — safe for Render free (512 MB); was unbounded Promise.all → OOM at cap=500
+      const pageResults = await pooledMap(
+        remainingPageNums,
+        async (pageNum) => {
           const props = await fetchPlaywrightPage(pageNum, pagesNeeded);
           const pageReviews = props.reviews ?? props.reviewsFromLocations ?? [];
           const extracted = extractReviews(pageReviews, cap, reviews.length);
           onProgress?.({ type: 'page-done', pageNum, totalPages: pagesNeeded, reviewCount: extracted.length });
           return extracted;
-        })
+        },
+        3
       );
 
       for (const batch of pageResults) {
@@ -162,8 +182,10 @@ async function scrapeWithFetch(sourceUrl: string, cap: number, onProgress?: Prog
 
   if (pagesNeeded > 1) {
     const remainingPageNums = Array.from({ length: pagesNeeded - 1 }, (_, i) => i + 2);
-    const pageResults = await Promise.all(
-      remainingPageNums.map(async (pageNum) => {
+    // 5 concurrent fetches — lighter than Playwright so can afford slightly more concurrency
+    const pageResults = await pooledMap(
+      remainingPageNums,
+      async (pageNum) => {
         onProgress?.({ type: 'page-start', pageNum, totalPages: pagesNeeded });
         const html = await fetchHtml(`${sourceUrl}?page=${pageNum}`);
         const props = extractNextData(html);
@@ -171,7 +193,8 @@ async function scrapeWithFetch(sourceUrl: string, cap: number, onProgress?: Prog
         const extracted = extractReviews(pageReviews, cap, reviews.length);
         onProgress?.({ type: 'page-done', pageNum, totalPages: pagesNeeded, reviewCount: extracted.length });
         return extracted;
-      })
+      },
+      5
     );
 
     for (const batch of pageResults) {

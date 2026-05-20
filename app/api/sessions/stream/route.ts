@@ -66,9 +66,8 @@ export async function GET(req: NextRequest) {
 
         send('done', { sessionId: session.id, count: result.reviews.length });
       } catch (err) {
-        const msg = err instanceof ScraperError
-          ? err.message
-          : 'Internal error. Please try again.';
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[stream] ingest error:', msg);
         send('error', { message: msg });
       } finally {
         controller.close();
