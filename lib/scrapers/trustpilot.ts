@@ -130,17 +130,25 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
 
     if (pagesNeeded > 1) {
       const remainingPageNums = Array.from({ length: pagesNeeded - 1 }, (_, i) => i + 2);
-      // 3 concurrent tabs — safe for Render free (512 MB); was unbounded Promise.all → OOM at cap=500
+      // Sequential (concurrency=1) + 1.5s delay: concurrent tabs trigger Trustpilot rate-limiting
+      // returning empty pages. Sequential with a pause avoids detection entirely.
       const pageResults = await pooledMap(
         remainingPageNums,
         async (pageNum) => {
-          const props = await fetchPlaywrightPage(pageNum, pagesNeeded);
-          const pageReviews = props.reviews ?? props.reviewsFromLocations ?? [];
+          await new Promise(r => setTimeout(r, 1500));
+          let props = await fetchPlaywrightPage(pageNum, pagesNeeded);
+          let pageReviews = props.reviews ?? props.reviewsFromLocations ?? [];
+          // Retry once on empty — transient block clears after a short wait
+          if (!pageReviews.length) {
+            await new Promise(r => setTimeout(r, 3000));
+            props = await fetchPlaywrightPage(pageNum, pagesNeeded);
+            pageReviews = props.reviews ?? props.reviewsFromLocations ?? [];
+          }
           const extracted = extractReviews(pageReviews, cap, reviews.length);
           onProgress?.({ type: 'page-done', pageNum, totalPages: pagesNeeded, reviewCount: extracted.length });
           return extracted;
         },
-        3
+        1
       );
 
       for (const batch of pageResults) {
