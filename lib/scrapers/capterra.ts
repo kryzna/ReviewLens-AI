@@ -70,7 +70,9 @@ function parseDate(str: string): string | null {
 }
 
 async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?: ProgressCallback): Promise<ScrapeResult> {
-  const { chromium } = await import('playwright-core');
+  const { chromium } = await import('playwright-extra');
+  const { default: StealthPlugin } = await import('playwright-extra-plugin-stealth');
+  chromium.use(StealthPlugin());
   const fs = await import('fs');
 
   const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));

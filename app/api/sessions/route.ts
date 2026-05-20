@@ -23,11 +23,13 @@ export async function POST(req: NextRequest) {
 
     let result;
     let source: Source = 'upload';
+    let fileName: string | undefined;
 
     if (contentType.includes('multipart/form-data')) {
       const form = await req.formData();
       const file = form.get('file') as File | null;
       if (!file) return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
+      fileName = file.name;
 
       const buffer = Buffer.from(await file.arrayBuffer());
       const name = file.name.toLowerCase();
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
       id: sessionId,
       source,
       sourceUrl: result.sourceUrl || undefined,
+      fileName,
       subjectName: result.subjectName,
       ingestedAt: new Date().toISOString(),
       ...aggregates,

@@ -89,6 +89,20 @@ export default function SummaryCard({ session }: { session: Session }) {
             </a>
           </span>
         )}
+        {session.source === 'upload' && (
+          <span>
+            <span className="font-medium text-slate-600">File:</span>{' '}
+            {session.fileName ?? `${session.subjectName} (name not recorded)`}
+          </span>
+        )}
+        {session.requestedCap != null && (
+          <span>
+            <span className="font-medium text-slate-600">Requested:</span> {session.requestedCap.toLocaleString()}
+            {session.requestedCap !== session.reviewCount && (
+              <span className="text-amber-600"> · imported {session.reviewCount.toLocaleString()}</span>
+            )}
+          </span>
+        )}
         <span>
           <span className="font-medium text-slate-600">Ingested:</span>{' '}
           {new Date(session.ingestedAt).toLocaleString()}

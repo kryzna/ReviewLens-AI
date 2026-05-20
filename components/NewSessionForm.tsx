@@ -2,9 +2,36 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Session } from '@/lib/types';
 
 type Step = { label: string; status: 'done' | 'active' };
 type PageStatus = { pageNum: number; status: 'loading' | 'done'; reviewCount?: number };
+type IngestResult = { sessionId: string; session: Session };
+
+function sourceBadgeClass(source: string): string {
+  const map: Record<string, string> = {
+    trustpilot: 'bg-emerald-100 text-emerald-700',
+    capterra: 'bg-orange-100 text-orange-700',
+    appstore: 'bg-slate-100 text-slate-700',
+    googleplay: 'bg-green-100 text-green-700',
+    upload: 'bg-violet-100 text-violet-700',
+  };
+  return map[source] ?? 'bg-violet-100 text-violet-700';
+}
+
+function sourceLabel(source: string): string {
+  const map: Record<string, string> = {
+    trustpilot: 'Trustpilot', capterra: 'Capterra', appstore: 'App Store',
+    googleplay: 'Google Play', upload: 'CSV / JSONL Upload',
+  };
+  return map[source] ?? source;
+}
+
+function renderStars(avg: number | null | undefined): string {
+  if (avg == null) return '';
+  const filled = Math.round(avg);
+  return '★'.repeat(filled) + '☆'.repeat(5 - filled);
+}
 
 export default function NewSessionForm() {
   const router = useRouter();
@@ -15,7 +42,19 @@ export default function NewSessionForm() {
   const [dragover, setDragover] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [pages, setPages] = useState<PageStatus[]>([]);
+  const [ingestResult, setIngestResult] = useState<IngestResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function fetchAndShowSummary(sessionId: string) {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}?limit=0`);
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json() as { session: Session };
+      setIngestResult({ sessionId, session: data.session });
+    } catch {
+      router.push(`/session/${sessionId}`);
+    }
+  }
 
   function pushStep(label: string) {
     setSteps(prev => [
@@ -80,7 +119,7 @@ export default function NewSessionForm() {
       const { sessionId } = JSON.parse(e.data) as { sessionId: string };
       setSteps(prev => prev.map(s => ({ ...s, status: 'done' as const })));
       setLoading(false);
-      router.push(`/session/${sessionId}`);
+      void fetchAndShowSummary(sessionId);
     });
 
     es.addEventListener('error', (e) => {
@@ -104,12 +143,88 @@ export default function NewSessionForm() {
       const res = await fetch('/api/sessions', { method: 'POST', body: form });
       const data = await res.json() as { sessionId?: string; error?: string };
       if (!res.ok) { setError(data.error ?? 'Upload failed.'); return; }
-      router.push(`/session/${data.sessionId}`);
+      void fetchAndShowSummary(data.sessionId!);
     } catch {
       setError('Network error.');
     } finally {
       setLoading(false);
     }
+  }
+
+  // ── Ingestion result summary screen ──────────────────────
+  if (ingestResult) {
+    const { sessionId, session } = ingestResult;
+    const hasRating = session.ratingAvg != null;
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-8">
+        <div className="glass-card rounded-3xl p-8 shadow-xl shadow-violet-100">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-lg shrink-0">✓</div>
+            <div>
+              <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider">Ingestion complete</p>
+              <h2 className="text-2xl font-display font-bold leading-tight">{session.subjectName}</h2>
+            </div>
+            <span className={`ml-auto px-3 py-1 rounded-full text-xs font-medium ${sourceBadgeClass(session.source)}`}>
+              {sourceLabel(session.source)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-slate-50 rounded-2xl">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-violet-700">{session.reviewCount.toLocaleString()}</p>
+              <p className="text-xs text-slate-500 mt-1">Reviews</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-violet-700">{session.verifiedCount.toLocaleString()}</p>
+              <p className="text-xs text-slate-500 mt-1">Verified</p>
+            </div>
+            <div className="text-center">
+              {hasRating ? (
+                <>
+                  <p className="text-3xl font-bold text-violet-700">{session.ratingAvg!.toFixed(1)}</p>
+                  <p className="text-xs text-amber-500 mt-1">{renderStars(session.ratingAvg)}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-slate-400">—</p>
+                  <p className="text-xs text-slate-500 mt-1">Avg Rating</p>
+                </>
+              )}
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-violet-700 mt-1">
+                {session.dateMin && session.dateMax
+                  ? <>{session.dateMin}<br /><span className="text-slate-400">→</span><br />{session.dateMax}</>
+                  : <span className="text-slate-400">—</span>}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Date Range</p>
+            </div>
+          </div>
+
+          {session.reviewCount === 0 && (
+            <p className="mb-4 text-sm text-amber-600 bg-amber-50 rounded-xl px-4 py-2">
+              No reviews were imported. Check your file format or URL and try again.
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIngestResult(null)}
+              className="px-5 py-3 rounded-2xl border border-slate-200 text-slate-600 text-sm font-medium hover:border-slate-300"
+            >
+              ← Start over
+            </button>
+            <button
+              onClick={() => router.push(`/session/${sessionId}`)}
+              disabled={session.reviewCount === 0}
+              className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-violet-500 text-white rounded-2xl font-medium text-sm shadow-lg shadow-violet-200 disabled:opacity-50"
+            >
+              Start Analysis →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -177,9 +292,13 @@ export default function NewSessionForm() {
           />
         </div>
 
-        <div className="mt-6 p-4 bg-violet-50 rounded-2xl">
-          <p className="text-sm font-medium text-violet-700 mb-1">Required fields for upload:</p>
-          <code className="text-sm text-slate-700">author, rating, date, text, source_url (optional)</code>
+        <div className="mt-4 p-4 bg-violet-50 rounded-2xl">
+          <p className="text-sm font-medium text-violet-700 mb-2">Required columns: <code className="font-mono">text</code>, <code className="font-mono">date</code> &nbsp;·&nbsp; Optional: <code className="font-mono">author</code>, <code className="font-mono">rating</code> (1–5), <code className="font-mono">source_url</code>, <code className="font-mono">verified</code></p>
+          <div className="flex gap-3">
+            <a href="/template.csv" download className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2">Download CSV template</a>
+            <span className="text-violet-300">·</span>
+            <a href="/template.jsonl" download className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2">Download JSONL template</a>
+          </div>
         </div>
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}

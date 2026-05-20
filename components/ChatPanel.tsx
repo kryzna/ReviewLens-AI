@@ -49,6 +49,7 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
 
   const [insightBrief, setInsightBrief] = useState<InsightBrief | null>(null);
   const [insightLoading, setInsightLoading] = useState(true);
+  const [insightSpinnerVisible, setInsightSpinnerVisible] = useState(false);
   const [insightExpanded, setInsightExpanded] = useState(false);
 
   const [followups, setFollowups] = useState<Map<string, string[]>>(new Map());
@@ -62,11 +63,15 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
   }, [messages]);
 
   useEffect(() => {
+    setInsightLoading(true);
+    setInsightSpinnerVisible(false);
+    const timer = setTimeout(() => setInsightSpinnerVisible(true), 500);
     fetch(`/api/sessions/${sessionId}/insight`)
       .then(r => r.ok ? r.json() as Promise<InsightBrief> : Promise.reject())
       .then(data => setInsightBrief(data))
       .catch(() => {})
-      .finally(() => setInsightLoading(false));
+      .finally(() => { clearTimeout(timer); setInsightLoading(false); setInsightSpinnerVisible(false); });
+    return () => clearTimeout(timer);
   }, [sessionId]);
 
   function fetchFollowups(msgId: string, content: string) {
@@ -181,7 +186,7 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
     <div className="glass-card rounded-3xl flex flex-col">
 
       {/* Proactive Insight Brief — pinned above scroll area, always visible */}
-      {(insightLoading || insightBrief) && (
+      {(insightSpinnerVisible || insightBrief) && (
         <div className="border-b border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50 rounded-t-3xl overflow-hidden">
           <button
             onClick={() => setInsightExpanded(e => !e)}
@@ -196,7 +201,7 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
                   {insightBrief.sentiment} · {insightBrief.score.toFixed(1)}★
                 </span>
               )}
-              {insightLoading && (
+              {insightSpinnerVisible && (
                 <span className="text-xs text-slate-400 animate-pulse">Analyzing reviews…</span>
               )}
             </div>

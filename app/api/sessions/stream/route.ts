@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
           id: sessionId,
           source,
           sourceUrl: result.sourceUrl || undefined,
+          requestedCap: cap,
           subjectName: result.subjectName,
           ingestedAt: new Date().toISOString(),
           ...aggregates,

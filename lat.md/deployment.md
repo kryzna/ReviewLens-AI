@@ -4,7 +4,7 @@ Fly.io deployment using Docker. App configured in `fly.toml`, container built fr
 
 ## Playwright on Alpine
 
-Scrapers use `playwright-core` with explicit `executablePath` — no browser auto-download.
+Scrapers use `playwright-extra` + stealth plugin (wraps `playwright-core`) with explicit `executablePath` — no browser auto-download. Stealth randomizes canvas, WebGL, headless flags to reduce bot detection.
 
 Alpine's `chromium` installs to `/usr/bin/chromium-browser`. Dockerfile installs `chromium nss freetype harfbuzz ca-certificates ttf-freefont` for full rendering. Both scrapers launch with `--no-sandbox --disable-setuid-sandbox` (required in containers).
 

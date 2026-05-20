@@ -1,0 +1,4 @@
+text,date,author,rating,source_url,verified
+"Great product, very easy to use and the onboarding was smooth.",2024-03-15,Jane Smith,5,https://example.com/review/1,true
+"Solid tool overall but the mobile experience needs work.",2024-02-20,John Doe,4,,false
+"Had recurring issues with the setup — support was slow to respond.",2024-01-10,Anonymous,2,https://example.com/review/3,true

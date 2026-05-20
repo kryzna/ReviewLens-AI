@@ -16,13 +16,15 @@ export async function insertSession(
   const id = session.id ?? uuidv4();
   await pool.query(
     `INSERT INTO sessions
-       (id, source, source_url, subject_name, ingested_at,
+       (id, source, source_url, file_name, requested_cap, subject_name, ingested_at,
         review_count, verified_count, date_min, date_max, rating_avg, rating_dist)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
     [
       id,
       session.source,
       session.sourceUrl ?? null,
+      session.fileName ?? null,
+      session.requestedCap ?? null,
       session.subjectName,
       session.ingestedAt,
       session.reviewCount,
@@ -43,6 +45,27 @@ export async function getSession(id: string): Promise<Session | null> {
   return rowToSession(rows[0]);
 }
 
+export async function getInsightBrief(id: string): Promise<import('@/lib/types').InsightBrief | null> {
+  try {
+    const pool = await db();
+    const { rows } = await pool.query('SELECT insight_brief FROM sessions WHERE id = $1', [id]);
+    const raw = rows[0]?.insight_brief as string | null;
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export async function saveInsightBrief(id: string, brief: import('@/lib/types').InsightBrief): Promise<void> {
+  try {
+    const pool = await db();
+    await pool.query('UPDATE sessions SET insight_brief = $1 WHERE id = $2', [JSON.stringify(brief), id]);
+  } catch (err) {
+    console.error('[saveInsightBrief] failed:', err);
+  }
+}
+
 export async function listSessions(): Promise<Session[]> {
   const pool = await db();
   const { rows } = await pool.query('SELECT * FROM sessions ORDER BY ingested_at DESC');
@@ -54,6 +77,8 @@ function rowToSession(row: Record<string, unknown>): Session {
     id: row.id as string,
     source: row.source as Session['source'],
     sourceUrl: (row.source_url as string) ?? undefined,
+    fileName: (row.file_name as string) ?? undefined,
+    requestedCap: (row.requested_cap as number) ?? undefined,
     subjectName: row.subject_name as string,
     ingestedAt: row.ingested_at as string,
     reviewCount: row.review_count as number,

@@ -1,0 +1,252 @@
+{
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/capterra-probe.ts": {
+    "mtime": 1779205391.7988691,
+    "ast_hash": "7b3e5920fcbc9851a8411fb31724a101",
+    "semantic_hash": "7b3e5920fcbc9851a8411fb31724a101"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/tailwind.config.js": {
+    "mtime": 1779003419.1525707,
+    "ast_hash": "90d3653af9d1050c5204fd255e2940e7",
+    "semantic_hash": "90d3653af9d1050c5204fd255e2940e7"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/.mcp.json": {
+    "mtime": 1779205135.6016393,
+    "ast_hash": "93298e7d32ed7c0882f0f6060cdd5c74",
+    "semantic_hash": "93298e7d32ed7c0882f0f6060cdd5c74"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/jest.config.js": {
+    "mtime": 1779003795.2912717,
+    "ast_hash": "dd63b8be74a2c23e258eaad1289e1109",
+    "semantic_hash": "dd63b8be74a2c23e258eaad1289e1109"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/next.config.js": {
+    "mtime": 1779004617.5517156,
+    "ast_hash": "6faf815c93df5a03154e882467859602",
+    "semantic_hash": "6faf815c93df5a03154e882467859602"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/next-env.d.ts": {
+    "mtime": 1779003518.9417205,
+    "ast_hash": "ba64ff7d54714a8f64db89b1003207d8",
+    "semantic_hash": "ba64ff7d54714a8f64db89b1003207d8"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/package.json": {
+    "mtime": 1779125198.0210238,
+    "ast_hash": "e12a5f9bff94eba45b4f9ff8e762a8b3",
+    "semantic_hash": "e12a5f9bff94eba45b4f9ff8e762a8b3"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/tsconfig.json": {
+    "mtime": 1779003412.9234965,
+    "ast_hash": "3845ba465b50728d69e9dc9c327d8a56",
+    "semantic_hash": "3845ba465b50728d69e9dc9c327d8a56"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/postcss.config.js": {
+    "mtime": 1779003421.1208024,
+    "ast_hash": "8640f9b2e6475cc3f5b1ff4548925765",
+    "semantic_hash": "8640f9b2e6475cc3f5b1ff4548925765"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/layout.tsx": {
+    "mtime": 1779003436.3675861,
+    "ast_hash": "61d0dc6157483a575062602e25c6d03f",
+    "semantic_hash": "61d0dc6157483a575062602e25c6d03f"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/page.tsx": {
+    "mtime": 1779003900.4394143,
+    "ast_hash": "2ee61dadb2890b02dff6a115cb3ce72c",
+    "semantic_hash": "2ee61dadb2890b02dff6a115cb3ce72c"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/api/sessions/route.ts": {
+    "mtime": 1779003703.6071444,
+    "ast_hash": "695359831ae4400882f96bcec86330e2",
+    "semantic_hash": "695359831ae4400882f96bcec86330e2"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/api/sessions/stream/route.ts": {
+    "mtime": 1779148827.6146288,
+    "ast_hash": "7af08a476457169b89445afe8b9c6adc",
+    "semantic_hash": "7af08a476457169b89445afe8b9c6adc"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/api/sessions/[id]/route.ts": {
+    "mtime": 1779003709.0756726,
+    "ast_hash": "f3dd53a2fce8e7f6c86d1def34b0f7aa",
+    "semantic_hash": "f3dd53a2fce8e7f6c86d1def34b0f7aa"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/api/sessions/[id]/messages/route.ts": {
+    "mtime": 1779003720.050722,
+    "ast_hash": "1209eb064a0dca9bfd9c121616572767",
+    "semantic_hash": "1209eb064a0dca9bfd9c121616572767"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/api/sessions/[id]/chat/route.ts": {
+    "mtime": 1779203003.8119211,
+    "ast_hash": "06a774a80963f05029080605f0d78b13",
+    "semantic_hash": "06a774a80963f05029080605f0d78b13"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/app/session/[id]/page.tsx": {
+    "mtime": 1779003928.4077904,
+    "ast_hash": "e6b642e0d4ec4554a815875246c4b6d5",
+    "semantic_hash": "e6b642e0d4ec4554a815875246c4b6d5"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/.opencode/plugins/lat.ts": {
+    "mtime": 1779205135.6122134,
+    "ast_hash": "2a2f4565497119f623d32dacb6e15641",
+    "semantic_hash": "2a2f4565497119f623d32dacb6e15641"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/.claude/settings.json": {
+    "mtime": 1779205135.5859282,
+    "ast_hash": "ce89aeb111fefa0c78aaf6f1272830b4",
+    "semantic_hash": "ce89aeb111fefa0c78aaf6f1272830b4"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/.claude/settings.local.json": {
+    "mtime": 1779203888.1487956,
+    "ast_hash": "9a31685d680f1504c037bdf4d5db8386",
+    "semantic_hash": "9a31685d680f1504c037bdf4d5db8386"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/TabsClient.tsx": {
+    "mtime": 1779202823.647983,
+    "ast_hash": "00ca41bca6441ba937609bf7e551075f",
+    "semantic_hash": "00ca41bca6441ba937609bf7e551075f"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/SessionSidebar.tsx": {
+    "mtime": 1779003813.3633757,
+    "ast_hash": "bd4a458773999e8f66d87cb409123256",
+    "semantic_hash": "bd4a458773999e8f66d87cb409123256"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/NewSessionForm.tsx": {
+    "mtime": 1779148867.6653254,
+    "ast_hash": "5b5d5aa23a308716fe22ca85f6f5f169",
+    "semantic_hash": "5b5d5aa23a308716fe22ca85f6f5f169"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/SummaryCard.tsx": {
+    "mtime": 1779003853.2865589,
+    "ast_hash": "83afcdf2b0c57e1f6207b29b3de3d609",
+    "semantic_hash": "83afcdf2b0c57e1f6207b29b3de3d609"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/StarDistribution.tsx": {
+    "mtime": 1779003840.3076386,
+    "ast_hash": "1c3dc153c693a48f70bd79c02889e039",
+    "semantic_hash": "1c3dc153c693a48f70bd79c02889e039"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/ChatPanel.tsx": {
+    "mtime": 1779203988.9893796,
+    "ast_hash": "de7c58969f66e57fb090b5d61451a049",
+    "semantic_hash": "de7c58969f66e57fb090b5d61451a049"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/CitationChip.tsx": {
+    "mtime": 1779003858.7897954,
+    "ast_hash": "499fea5f0993f9f5e6b3e3f6d417229a",
+    "semantic_hash": "499fea5f0993f9f5e6b3e3f6d417229a"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/components/ReviewsPanel.tsx": {
+    "mtime": 1779003896.0866933,
+    "ast_hash": "63204ad8e19c867272d4f82a7f0a0ddd",
+    "semantic_hash": "63204ad8e19c867272d4f82a7f0a0ddd"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/scripts/scrape-to-csv.ts": {
+    "mtime": 1779125185.2519639,
+    "ast_hash": "6fa97ab70952afedda8354b990886da3",
+    "semantic_hash": "6fa97ab70952afedda8354b990886da3"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/types.ts": {
+    "mtime": 1779148785.5560868,
+    "ast_hash": "c6ed05be5c89be9804b83f5754eb51bb",
+    "semantic_hash": "c6ed05be5c89be9804b83f5754eb51bb"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/llm/prompt.ts": {
+    "mtime": 1779003662.681801,
+    "ast_hash": "0c5280b46286fd52ba75cd18031c50b5",
+    "semantic_hash": "0c5280b46286fd52ba75cd18031c50b5"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/llm/chat.ts": {
+    "mtime": 1779203205.7634037,
+    "ast_hash": "d3cb990130ad0322993081c814230b7b",
+    "semantic_hash": "d3cb990130ad0322993081c814230b7b"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/llm/client.ts": {
+    "mtime": 1779003653.445901,
+    "ast_hash": "d922b7d5d7c211e74e7b746585766c14",
+    "semantic_hash": "d922b7d5d7c211e74e7b746585766c14"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/llm/citations.test.ts": {
+    "mtime": 1779003742.5882187,
+    "ast_hash": "bc59e9f11a5f16a566ebed21b196c8c2",
+    "semantic_hash": "bc59e9f11a5f16a566ebed21b196c8c2"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/llm/citations.ts": {
+    "mtime": 1779003666.2057683,
+    "ast_hash": "e5882430f046d72d357a756c0e9a3d47",
+    "semantic_hash": "e5882430f046d72d357a756c0e9a3d47"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/ingest/normalize.test.ts": {
+    "mtime": 1779003751.476206,
+    "ast_hash": "8a834dc3646d8afe5fc1a3d54b3ce1c6",
+    "semantic_hash": "8a834dc3646d8afe5fc1a3d54b3ce1c6"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/ingest/parseJsonl.ts": {
+    "mtime": 1779003638.991098,
+    "ast_hash": "18b0eb290051e19243886f99ee2047f6",
+    "semantic_hash": "18b0eb290051e19243886f99ee2047f6"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/ingest/normalize.ts": {
+    "mtime": 1779003645.9057577,
+    "ast_hash": "503a69454b17f727efcfdf6c598b0275",
+    "semantic_hash": "503a69454b17f727efcfdf6c598b0275"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/ingest/parseCsv.ts": {
+    "mtime": 1779003632.2521667,
+    "ast_hash": "b44dfecc4e03d6eb2470ca422cfb0491",
+    "semantic_hash": "b44dfecc4e03d6eb2470ca422cfb0491"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/db/schema.sql": {
+    "mtime": 1779003549.7224796,
+    "ast_hash": "6365c9ea57a57c2c1539a39f6ade80f1",
+    "semantic_hash": "6365c9ea57a57c2c1539a39f6ade80f1"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/db/repo.ts": {
+    "mtime": 1779003572.1499894,
+    "ast_hash": "94d536175289096a76856e8e4b35e860",
+    "semantic_hash": "94d536175289096a76856e8e4b35e860"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/db/client.ts": {
+    "mtime": 1779003554.1833162,
+    "ast_hash": "c650c3a270e0d654e1820b15f1d355d0",
+    "semantic_hash": "c650c3a270e0d654e1820b15f1d355d0"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/googleplay.test.ts": {
+    "mtime": 1779003786.9882212,
+    "ast_hash": "efd7c8462bc1522b57b9e7d3d33d402b",
+    "semantic_hash": "efd7c8462bc1522b57b9e7d3d33d402b"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/trustpilot.ts": {
+    "mtime": 1779148820.7787726,
+    "ast_hash": "3a8215e5157f04b9e1ee1571ac64f7fd",
+    "semantic_hash": "3a8215e5157f04b9e1ee1571ac64f7fd"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/googleplay.ts": {
+    "mtime": 1779125810.3113344,
+    "ast_hash": "8d53351dddcc65f9beba9d3099905676",
+    "semantic_hash": "8d53351dddcc65f9beba9d3099905676"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/appstore.ts": {
+    "mtime": 1779125795.4983916,
+    "ast_hash": "6c2fce3d4e171e2dbfd7a780715cc778",
+    "semantic_hash": "6c2fce3d4e171e2dbfd7a780715cc778"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/appstore.test.ts": {
+    "mtime": 1779003729.8897612,
+    "ast_hash": "96aa49dc80c5398dc06988385b30dcc0",
+    "semantic_hash": "96aa49dc80c5398dc06988385b30dcc0"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/index.ts": {
+    "mtime": 1779125819.2097235,
+    "ast_hash": "09c8ebd5a179bc89dd0a128d56f24874",
+    "semantic_hash": "09c8ebd5a179bc89dd0a128d56f24874"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/scrapers/trustpilot.test.ts": {
+    "mtime": 1779124817.6636443,
+    "ast_hash": "21b7604b9af4573862ff7d2c6f103268",
+    "semantic_hash": "21b7604b9af4573862ff7d2c6f103268"
+  },
+  "/Users/krishseetharaman/workspace/ReviewLens-AI/lib/guard/preCheck.ts": {
+    "mtime": 1779003649.3761082,
+    "ast_hash": "d747522ae783b7b6e5c959510fd5b25a",
+    "semantic_hash": "d747522ae783b7b6e5c959510fd5b25a"
+  }
+}

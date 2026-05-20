@@ -17,6 +17,8 @@ export interface Session {
   id: string;
   source: Source;
   sourceUrl?: string;
+  fileName?: string;
+  requestedCap?: number;
   subjectName: string;
   ingestedAt: string;
   reviewCount: number;

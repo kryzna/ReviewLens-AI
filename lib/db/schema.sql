@@ -35,3 +35,8 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, created_at);
+
+-- Migrations: idempotent, safe on existing tables
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS file_name TEXT;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS requested_cap INTEGER;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS insight_brief TEXT;
