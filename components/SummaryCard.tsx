@@ -39,9 +39,10 @@ export default function SummaryCard({ session }: { session: Session }) {
               href={session.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-600 text-sm hover:underline flex items-center gap-1"
+              title={session.sourceUrl}
+              className="text-violet-600 text-sm hover:underline flex items-center gap-1 max-w-md truncate"
             >
-              View on source ↗
+              {session.sourceUrl} ↗
             </a>
           )}
         </div>
@@ -76,6 +77,22 @@ export default function SummaryCard({ session }: { session: Session }) {
           <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">Session ID</p>
           <CopyableId id={session.id} />
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-x-8 gap-y-2 mb-6 pt-4 border-t border-violet-50 text-xs text-slate-500">
+        <span><span className="font-medium text-slate-600">Source:</span> {sourceLabel(session.source)}</span>
+        {session.sourceUrl && (
+          <span className="truncate max-w-sm">
+            <span className="font-medium text-slate-600">URL:</span>{' '}
+            <a href={session.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:underline" title={session.sourceUrl}>
+              {session.sourceUrl}
+            </a>
+          </span>
+        )}
+        <span>
+          <span className="font-medium text-slate-600">Ingested:</span>{' '}
+          {new Date(session.ingestedAt).toLocaleString()}
+        </span>
       </div>
 
       <p className="text-sm font-medium text-slate-500 mb-4">Rating Distribution</p>
