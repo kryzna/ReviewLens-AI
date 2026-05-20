@@ -15,9 +15,11 @@ export default async function SessionPage({
   const session = await getSession(id);
   if (!session) notFound();
 
-  const reviews = await getReviews(id, 0, 20);
-  const allReviews = await getAllReviews(id);
-  const messages = await getMessages(id);
+  const [reviews, allReviews, messages] = await Promise.all([
+    getReviews(id, 0, 20),
+    getAllReviews(id),
+    getMessages(id),
+  ]);
 
   return (
     <div className="flex h-screen">
