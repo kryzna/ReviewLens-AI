@@ -179,54 +179,55 @@ export default function ChatPanel({ sessionId, reviews, initialMessages }: Props
 
   return (
     <div className="glass-card rounded-3xl flex flex-col">
+
+      {/* Proactive Insight Brief — pinned above scroll area, always visible */}
+      {(insightLoading || insightBrief) && (
+        <div className="border-b border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50 rounded-t-3xl overflow-hidden">
+          <button
+            onClick={() => setInsightExpanded(e => !e)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-violet-100/40 transition-colors"
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base">✨</span>
+              <span className="font-semibold text-slate-700 text-sm">AI Insights</span>
+              {insightBrief && (
+                <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ${sentimentBadgeClass(insightBrief.sentiment)}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${sentimentDotClass(insightBrief.sentiment)}`} />
+                  {insightBrief.sentiment} · {insightBrief.score.toFixed(1)}★
+                </span>
+              )}
+              {insightLoading && (
+                <span className="text-xs text-slate-400 animate-pulse">Analyzing reviews…</span>
+              )}
+            </div>
+            <span className="text-slate-400 text-xs shrink-0 ml-2">{insightExpanded ? '▲' : '▼'}</span>
+          </button>
+
+          {insightExpanded && insightBrief && (
+            <div className="px-4 pb-4 space-y-3">
+              <p className="text-sm text-slate-600 italic border-l-2 border-violet-300 pl-3">
+                {insightBrief.summary}
+              </p>
+              <div className="space-y-2">
+                {insightBrief.themes.map((theme, i) => (
+                  <div key={i} className="bg-white rounded-xl p-3 border border-violet-100 shadow-sm">
+                    <p className="text-xs font-semibold text-violet-700 mb-1">
+                      <span className="inline-flex w-4 h-4 items-center justify-center bg-violet-100 rounded-full mr-1.5 text-[10px]">{i + 1}</span>
+                      {theme.title}
+                    </p>
+                    <p className="text-xs text-slate-600 mb-2">{theme.description}</p>
+                    <blockquote className="text-xs text-slate-500 italic border-l-2 border-violet-200 pl-2">
+                      &ldquo;{theme.quote}&rdquo;
+                    </blockquote>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="p-6 space-y-4 min-h-[300px] max-h-[500px] overflow-y-auto">
-
-        {/* Proactive Insight Brief */}
-        {(insightLoading || insightBrief) && (
-          <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50 overflow-hidden">
-            <button
-              onClick={() => setInsightExpanded(e => !e)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-violet-100/40 transition-colors"
-            >
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base">✨</span>
-                <span className="font-semibold text-slate-700 text-sm">AI Insights</span>
-                {insightBrief && (
-                  <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ${sentimentBadgeClass(insightBrief.sentiment)}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${sentimentDotClass(insightBrief.sentiment)}`} />
-                    {insightBrief.sentiment} · {insightBrief.score.toFixed(1)}★
-                  </span>
-                )}
-                {insightLoading && (
-                  <span className="text-xs text-slate-400 animate-pulse">Analyzing reviews…</span>
-                )}
-              </div>
-              <span className="text-slate-400 text-xs shrink-0 ml-2">{insightExpanded ? '▲' : '▼'}</span>
-            </button>
-
-            {insightExpanded && insightBrief && (
-              <div className="px-4 pb-4 space-y-3">
-                <p className="text-sm text-slate-600 italic border-l-2 border-violet-300 pl-3">
-                  {insightBrief.summary}
-                </p>
-                <div className="space-y-2">
-                  {insightBrief.themes.map((theme, i) => (
-                    <div key={i} className="bg-white rounded-xl p-3 border border-violet-100 shadow-sm">
-                      <p className="text-xs font-semibold text-violet-700 mb-1">
-                        <span className="inline-flex w-4 h-4 items-center justify-center bg-violet-100 rounded-full mr-1.5 text-[10px]">{i + 1}</span>
-                        {theme.title}
-                      </p>
-                      <p className="text-xs text-slate-600 mb-2">{theme.description}</p>
-                      <blockquote className="text-xs text-slate-500 italic border-l-2 border-violet-200 pl-2">
-                        &ldquo;{theme.quote}&rdquo;
-                      </blockquote>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Empty state with quick-start prompts */}
         {messages.length === 0 && (
