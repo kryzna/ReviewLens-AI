@@ -1,5 +1,6 @@
 import type { Session } from '@/lib/types';
 import StarDistribution from './StarDistribution';
+import CopyableId from './CopyableId';
 
 function sourceBadgeClass(source: string): string {
   const map: Record<string, string> = {
@@ -73,7 +74,7 @@ export default function SummaryCard({ session }: { session: Session }) {
         </div>
         <div>
           <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">Session ID</p>
-          <p className="text-sm font-bold mt-1 truncate text-slate-600">{session.id.slice(0, 8)}…</p>
+          <CopyableId id={session.id} />
         </div>
       </div>
 
