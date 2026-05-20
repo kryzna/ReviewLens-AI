@@ -71,3 +71,16 @@ export class IngestError extends Error {
     this.name = 'IngestError';
   }
 }
+
+export interface InsightTheme {
+  title: string;
+  description: string;
+  quote: string;
+}
+
+export interface InsightBrief {
+  sentiment: string;
+  score: number;
+  summary: string;
+  themes: InsightTheme[];
+}
