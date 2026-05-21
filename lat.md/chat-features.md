@@ -62,7 +62,7 @@ Static templates in `public/` help users format CSV or JSONL uploads correctly b
 
 A "Try sample data" button fetches `public/reviews.csv` and calls `ingestFile` directly. Unlike URL ingestion (which uses SSE and populates steps/pages via events), file upload uses a plain `POST /api/sessions` with no streaming. To provide equivalent visual feedback, `ingestFile` pushes synthetic steps into the same `steps` state: "Uploading {filename}…" (pulsing) while the POST is in-flight, then "✓ Uploaded {filename}" + "Generating Insight Radar…" (pulsing) while `fetchAndShowSummary` resolves.
 
-While `loading` is true, the dropzone is disabled (50% opacity, `cursor-not-allowed`, click/drag/drop ignored, file input `disabled`). This prevents a second upload from interrupting an in-flight ingest.
+While `loading` is true, the entire form is locked: the dropzone is disabled (50% opacity, `cursor-not-allowed`, click/drag/drop ignored, file input `disabled`); the URL input and cap number input are also `disabled` (50% opacity, `cursor-not-allowed`); the Enter keydown on the URL input is gated on `!loading`. This prevents any new ingest from interrupting an in-flight one.
 
 ## Ingestion Result Summary
 

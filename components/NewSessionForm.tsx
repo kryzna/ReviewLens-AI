@@ -250,9 +250,10 @@ export default function NewSessionForm() {
             type="text"
             value={url}
             onChange={e => setUrl(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && ingestUrl()}
+            onKeyDown={e => e.key === 'Enter' && !loading && ingestUrl()}
             placeholder="Trustpilot, Capterra, G2, or Google Play URL"
-            className="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none"
+            disabled={loading}
+            className="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
         <p className="text-xs text-slate-500 mb-4">Supports Trustpilot, Capterra, G2, and Google Play URLs</p>
@@ -265,7 +266,8 @@ export default function NewSessionForm() {
             max={500}
             value={cap}
             onChange={e => setCap(Math.min(500, Math.max(1, parseInt(e.target.value) || 1)))}
-            className="w-24 px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-500 outline-none text-sm"
+            disabled={loading}
+            className="w-24 px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-500 outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <span className="text-xs text-slate-400">(max 500)</span>
         </div>
