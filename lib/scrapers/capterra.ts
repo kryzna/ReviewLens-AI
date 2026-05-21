@@ -70,9 +70,7 @@ function parseDate(str: string): string | null {
 }
 
 async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?: ProgressCallback): Promise<ScrapeResult> {
-  const { chromium } = await import('playwright-extra');
-  const StealthPlugin = await import('puppeteer-extra-plugin-stealth');
-  chromium.use((StealthPlugin.default ?? StealthPlugin)());
+  const { chromium } = await import('playwright-core');
   const fs = await import('fs');
 
   const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));
@@ -81,7 +79,12 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
   const browser = await chromium.launch({
     executablePath,
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-blink-features=AutomationControlled',
+      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    ],
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
