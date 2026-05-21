@@ -58,7 +58,7 @@ export default function SessionSidebar() {
 
       <div className="px-4 pb-4">
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push(pathname === '/' ? `/?new=${Date.now()}` : '/')}
           className="w-full py-3 bg-gradient-to-r from-violet-600 to-cyan-500 text-white rounded-2xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-violet-200"
         >
           + New Session

@@ -64,9 +64,13 @@ A "Try sample data" button fetches `public/reviews.csv` and calls `ingestFile` d
 
 While `loading` is true, the entire form is locked: the dropzone is disabled (50% opacity, `cursor-not-allowed`, click/drag/drop ignored, file input `disabled`); the URL input and cap number input are also `disabled` (50% opacity, `cursor-not-allowed`); the Enter keydown on the URL input is gated on `!loading`. This prevents any new ingest from interrupting an in-flight one.
 
+A spinning SVG appears inside the right edge of the URL input while `loading` is true. A "✕ Cancel" button appears next to the ingest button during loading — it calls `cancelIngest()`, which closes the `EventSource` (stored in `esRef`) or aborts the `fetch` (via `AbortController` in `abortRef`) and resets all progress state. Aborted file uploads are silently swallowed (AbortError is not shown as an error).
+
 ## Ingestion Result Summary
 
 After any ingest (URL or file upload), `[[components/NewSessionForm.tsx]]` fetches the created session via `GET /api/sessions/[id]?limit=0` and renders an inline summary card instead of immediately redirecting.
+
+Clicking "+ New Session" in the sidebar while already on `/` would not reset the form because `router.push('/')` is a no-op on the same route. Fix: sidebar pushes `/?new=<timestamp>` when `pathname === '/'`; `[[app/page.tsx]]` passes `searchParams.new` as the `key` prop on `NewSessionForm`, forcing a remount and resetting all state.
 
 The card shows: subject name, source badge, review count, verified count, avg rating with stars, and date range. A "Start Analysis →" button navigates to the session page. If zero reviews were imported, the button is disabled and a warning is shown. A "Start over" button resets the form.
 

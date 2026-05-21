@@ -45,6 +45,19 @@ export default function NewSessionForm() {
   const [pages, setPages] = useState<PageStatus[]>([]);
   const [ingestResult, setIngestResult] = useState<IngestResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const esRef = useRef<EventSource | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  function cancelIngest() {
+    esRef.current?.close();
+    esRef.current = null;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setLoading(false);
+    setSteps([]);
+    setPages([]);
+    setError('');
+  }
 
   async function fetchAndShowSummary(sessionId: string) {
     try {
@@ -69,6 +82,7 @@ export default function NewSessionForm() {
     setLoading(true); setError(''); setSteps([]); setPages([]);
 
     const es = new EventSource(`/api/sessions/stream?url=${encodeURIComponent(url)}&cap=${cap}`);
+    esRef.current = es;
 
     es.addEventListener('navigating', (e) => {
       const { message } = JSON.parse(e.data) as { message: string };
@@ -117,6 +131,7 @@ export default function NewSessionForm() {
 
     es.addEventListener('done', (e) => {
       es.close();
+      esRef.current = null;
       const { sessionId } = JSON.parse(e.data) as { sessionId: string };
       setSteps(prev => prev.map(s => ({ ...s, status: 'done' as const })));
       setLoading(false);
@@ -125,6 +140,7 @@ export default function NewSessionForm() {
 
     es.addEventListener('error', (e) => {
       es.close();
+      esRef.current = null;
       setLoading(false);
       try {
         const { message } = JSON.parse((e as MessageEvent).data) as { message: string };
@@ -140,10 +156,12 @@ export default function NewSessionForm() {
   async function ingestFile(file: File) {
     setLoading(true); setError(''); setSteps([]);
     setSteps([{ label: `Uploading ${file.name}…`, status: 'active' }]);
+    const controller = new AbortController();
+    abortRef.current = controller;
     const form = new FormData();
     form.append('file', file);
     try {
-      const res = await fetch('/api/sessions', { method: 'POST', body: form });
+      const res = await fetch('/api/sessions', { method: 'POST', body: form, signal: controller.signal });
       const data = await res.json() as { sessionId?: string; error?: string };
       if (!res.ok) { setError(data.error ?? 'Upload failed.'); setSteps([]); return; }
       setSteps([
@@ -151,10 +169,13 @@ export default function NewSessionForm() {
         { label: 'Generating Insight Radar…', status: 'active' },
       ]);
       void fetchAndShowSummary(data.sessionId!);
-    } catch {
-      setError('Network error.');
-      setSteps([]);
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        setError('Network error.');
+        setSteps([]);
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
     }
   }
@@ -253,8 +274,16 @@ export default function NewSessionForm() {
             onKeyDown={e => e.key === 'Enter' && !loading && ingestUrl()}
             placeholder="Trustpilot, Capterra, G2, or Google Play URL"
             disabled={loading}
-            className="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full pl-12 pr-12 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
+          {loading && (
+            <span className="absolute right-4 top-1/2 -translate-y-1/2">
+              <svg className="animate-spin h-5 w-5 text-violet-500" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            </span>
+          )}
         </div>
         <p className="text-xs text-slate-500 mb-4">Supports Trustpilot, Capterra, G2, and Google Play URLs</p>
 
@@ -329,13 +358,23 @@ export default function NewSessionForm() {
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-        <button
-          onClick={ingestUrl}
-          disabled={loading}
-          className="mt-6 w-full py-4 bg-gradient-to-r from-violet-600 to-violet-500 text-white rounded-2xl font-medium flex items-center justify-center gap-3 shadow-lg shadow-violet-200 disabled:opacity-60"
-        >
-          {loading ? 'Importing…' : '↑ Ingest Reviews'}
-        </button>
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={ingestUrl}
+            disabled={loading}
+            className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-violet-500 text-white rounded-2xl font-medium flex items-center justify-center gap-3 shadow-lg shadow-violet-200 disabled:opacity-60"
+          >
+            {loading ? 'Importing…' : '↑ Ingest Reviews'}
+          </button>
+          {loading && (
+            <button
+              onClick={cancelIngest}
+              className="px-5 py-4 rounded-2xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50"
+            >
+              ✕ Cancel
+            </button>
+          )}
+        </div>
 
         {steps.length > 0 && (
           <ol className="mt-4 space-y-2">
