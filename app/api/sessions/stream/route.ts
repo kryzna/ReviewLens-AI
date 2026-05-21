@@ -5,10 +5,19 @@ import { computeAggregates } from '@/lib/ingest/normalize';
 import { insertSession, insertReviews, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
 import { generateInsight } from '@/lib/llm/insight';
 import { ScraperError, type Source } from '@/lib/types';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const { allowed, retryAfterSecs } = checkRateLimit(getClientIp(req));
+  if (!allowed) {
+    return new Response(`Rate limit exceeded. Try again in ${retryAfterSecs}s.`, {
+      status: 429,
+      headers: { 'Retry-After': String(retryAfterSecs) },
+    });
+  }
+
   const url = req.nextUrl.searchParams.get('url');
   const capParam = req.nextUrl.searchParams.get('cap');
   const cap = Math.min(500, Math.max(1, parseInt(capParam ?? '50') || 50));
@@ -38,6 +47,7 @@ export async function GET(req: NextRequest) {
         if (url.includes('apps.apple.com')) source = 'appstore';
         else if (url.includes('play.google.com')) source = 'googleplay';
         else if (url.includes('capterra.com')) source = 'capterra';
+        else if (url.includes('g2.com')) source = 'g2';
 
         const result = await scrapeUrl(url, cap, (evt) => {
           if (evt.type === 'navigating') {

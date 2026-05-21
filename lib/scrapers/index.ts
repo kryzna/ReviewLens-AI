@@ -4,14 +4,15 @@ import { trustpilotScraper } from './trustpilot';
 import { appStoreScraper } from './appstore';
 import { googlePlayScraper } from './googleplay';
 import { capterraScraper } from './capterra';
+import { g2Scraper } from './g2';
 
-const scrapers: Scraper[] = [trustpilotScraper, appStoreScraper, googlePlayScraper, capterraScraper];
+const scrapers: Scraper[] = [trustpilotScraper, appStoreScraper, googlePlayScraper, capterraScraper, g2Scraper];
 
 export function findScraper(url: string): Scraper {
   const scraper = scrapers.find(s => s.matches(url));
   if (!scraper) {
     throw new ScraperError(
-      `No scraper available for this URL. Supported: Trustpilot, Capterra. Use file upload for other sources.`
+      `No scraper available for this URL. Supported: Trustpilot, Capterra, G2, App Store, Google Play. Use file upload for other sources.`
     );
   }
   return scraper;

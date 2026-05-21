@@ -12,6 +12,7 @@ function sourceBadgeClass(source: string): string {
   const map: Record<string, string> = {
     trustpilot: 'bg-emerald-100 text-emerald-700',
     capterra: 'bg-orange-100 text-orange-700',
+    g2: 'bg-red-100 text-red-700',
     appstore: 'bg-slate-100 text-slate-700',
     googleplay: 'bg-green-100 text-green-700',
     upload: 'bg-violet-100 text-violet-700',
@@ -21,8 +22,8 @@ function sourceBadgeClass(source: string): string {
 
 function sourceLabel(source: string): string {
   const map: Record<string, string> = {
-    trustpilot: 'Trustpilot', capterra: 'Capterra', appstore: 'App Store',
-    googleplay: 'Google Play', upload: 'CSV / JSONL Upload',
+    trustpilot: 'Trustpilot', capterra: 'Capterra', g2: 'G2',
+    appstore: 'App Store', googleplay: 'Google Play', upload: 'CSV / JSONL Upload',
   };
   return map[source] ?? source;
 }
@@ -232,7 +233,7 @@ export default function NewSessionForm() {
     <div className="max-w-2xl mx-auto py-12 px-8">
       <div className="text-center mb-10">
         <h1 className="text-4xl font-display font-bold mb-3">Start a New Analysis Session</h1>
-        <p className="text-slate-500">Import reviews from Trustpilot or Capterra — or upload your own data</p>
+        <p className="text-slate-500">Import reviews from Trustpilot, Capterra, G2, App Store, or Google Play — or upload your own data</p>
       </div>
 
       <div className="glass-card rounded-3xl p-8 shadow-xl shadow-violet-100">
@@ -244,11 +245,11 @@ export default function NewSessionForm() {
             value={url}
             onChange={e => setUrl(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && ingestUrl()}
-            placeholder="https://www.trustpilot.com/review/example.com"
+            placeholder="Trustpilot, Capterra, G2, App Store, or Google Play URL"
             className="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 focus:border-violet-500 outline-none"
           />
         </div>
-        <p className="text-xs text-slate-500 mb-4">Supports Trustpilot and Capterra URLs</p>
+        <p className="text-xs text-slate-500 mb-4">Supports Trustpilot, Capterra, G2, App Store, and Google Play URLs</p>
 
         <div className="flex items-center gap-3 mb-6">
           <label className="text-sm font-medium text-slate-700 whitespace-nowrap">Max reviews</label>

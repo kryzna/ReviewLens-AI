@@ -7,6 +7,7 @@ import { computeAggregates } from '@/lib/ingest/normalize';
 import { insertSession, insertReviews, listSessions, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
 import { generateInsight } from '@/lib/llm/insight';
 import { ScraperError, IngestError, type Source } from '@/lib/types';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function GET() {
   try {
@@ -19,6 +20,14 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { allowed, retryAfterSecs } = checkRateLimit(getClientIp(req));
+  if (!allowed) {
+    return NextResponse.json(
+      { error: `Rate limit exceeded. Try again in ${retryAfterSecs}s.` },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSecs) } }
+    );
+  }
+
   try {
     const contentType = req.headers.get('content-type') ?? '';
 
@@ -51,6 +60,8 @@ export async function POST(req: NextRequest) {
       if (urlStr.includes('trustpilot.com')) source = 'trustpilot';
       else if (urlStr.includes('apps.apple.com')) source = 'appstore';
       else if (urlStr.includes('play.google.com')) source = 'googleplay';
+      else if (urlStr.includes('capterra.com')) source = 'capterra';
+      else if (urlStr.includes('g2.com')) source = 'g2';
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60_000);
