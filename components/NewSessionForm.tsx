@@ -295,10 +295,12 @@ export default function NewSessionForm() {
 
         <div className="mt-4 p-4 bg-violet-50 rounded-2xl">
           <p className="text-sm font-medium text-violet-700 mb-2">Required columns: <code className="font-mono">text</code>, <code className="font-mono">date</code> &nbsp;·&nbsp; Optional: <code className="font-mono">author</code>, <code className="font-mono">rating</code> (1–5), <code className="font-mono">source_url</code>, <code className="font-mono">verified</code></p>
-          <div className="flex gap-3">
-            <a href="/template.csv" download className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2">Download CSV template</a>
+          <div className="flex flex-wrap gap-3 items-center">
+            <a href="/reviews.csv" download className="text-xs font-medium text-violet-700 hover:text-violet-900 underline underline-offset-2">⬇ Sample reviews (15 rows)</a>
             <span className="text-violet-300">·</span>
-            <a href="/template.jsonl" download className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2">Download JSONL template</a>
+            <a href="/template.csv" download className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2">CSV template</a>
+            <span className="text-violet-300">·</span>
+            <a href="/template.jsonl" download className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2">JSONL template</a>
           </div>
         </div>
 
