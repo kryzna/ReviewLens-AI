@@ -87,8 +87,10 @@ export async function POST(req: NextRequest) {
 
     await insertReviews(sessionId, result.reviews);
 
-    // Pre-warm insight cache so Insight Radar loads instantly on session page
-    getAllReviews(sessionId).then(reviews => generateInsight(reviews)).then(brief => saveInsightBrief(sessionId, brief)).catch(() => {});
+    // Await insight generation before responding — file upload returns in <1s so
+    // the user navigates before the background pre-warm finishes. Awaiting here
+    // adds ~3-5s to the response but ensures the Insight Radar loads instantly.
+    await getAllReviews(sessionId).then(reviews => generateInsight(reviews)).then(brief => saveInsightBrief(sessionId, brief)).catch(() => {});
 
     return NextResponse.json({ sessionId: session.id }, { status: 201 });
   } catch (err) {
