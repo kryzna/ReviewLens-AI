@@ -66,6 +66,11 @@ export async function saveInsightBrief(id: string, brief: import('@/lib/types').
   }
 }
 
+export async function deleteSession(id: string): Promise<void> {
+  const pool = await db();
+  await pool.query('DELETE FROM sessions WHERE id = $1', [id]);
+}
+
 export async function listSessions(): Promise<Session[]> {
   const pool = await db();
   const { rows } = await pool.query('SELECT * FROM sessions ORDER BY ingested_at DESC');

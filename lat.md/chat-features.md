@@ -28,6 +28,12 @@ Spider/radar chart rendered on session page load before the user types anything.
 
 The insight cache is pre-warmed at scrape time: `[[app/api/sessions/stream/route.ts]]` fires `generateInsight` + `saveInsightBrief` in a background promise (no `await`) after `insertReviews`. By the time the user navigates to the session page, `/api/sessions/[id]/insight` hits the cache and returns immediately.
 
+## Session Sidebar
+
+`[[components/SessionSidebar.tsx]]` lists all sessions ordered by `ingested_at DESC`. Each item shows a trash icon on hover; clicking it deletes the session.
+
+Deletion is optimistic: the item is removed from local state immediately, the user is redirected to `/` if the active session was deleted, and `DELETE /api/sessions/[id]` fires in the background. The handler calls `[[lib/db/repo.ts#deleteSession]]` (`DELETE FROM sessions WHERE id = $1`), cascading to `reviews` and `messages` via FK constraints.
+
 ## Quick-Start Prompts
 
 Four pre-written analytical questions render as clickable buttons in the empty state. Clicking one immediately fires `send()`. They disappear after the first message is sent.
