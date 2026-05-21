@@ -278,12 +278,13 @@ export default function NewSessionForm() {
 
         <label className="block text-sm font-medium text-slate-700 mb-2">Upload Review Data</label>
         <div
-          className={`dropzone border-2 border-dashed border-violet-200 rounded-2xl p-12 text-center cursor-pointer hover:border-violet-400 ${dragover ? 'dragover' : ''}`}
-          onClick={() => fileRef.current?.click()}
-          onDragOver={e => { e.preventDefault(); setDragover(true); }}
+          className={`dropzone border-2 border-dashed border-violet-200 rounded-2xl p-12 text-center ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-violet-400'} ${dragover ? 'dragover' : ''}`}
+          onClick={() => { if (!loading) fileRef.current?.click(); }}
+          onDragOver={e => { e.preventDefault(); if (!loading) setDragover(true); }}
           onDragLeave={() => setDragover(false)}
           onDrop={e => {
             e.preventDefault(); setDragover(false);
+            if (loading) return;
             const file = e.dataTransfer.files[0];
             if (file) ingestFile(file);
           }}
@@ -296,6 +297,7 @@ export default function NewSessionForm() {
             type="file"
             accept=".csv,.jsonl"
             className="hidden"
+            disabled={loading}
             onChange={e => { const f = e.target.files?.[0]; if (f) ingestFile(f); }}
           />
         </div>
