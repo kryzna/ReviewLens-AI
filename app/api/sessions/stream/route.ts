@@ -76,8 +76,11 @@ export async function GET(req: NextRequest) {
         });
         await insertReviews(sessionId, result.reviews);
 
-        // Pre-warm insight cache so session page loads instantly
-        getAllReviews(sessionId).then(reviews => generateInsight(reviews)).then(brief => saveInsightBrief(sessionId, brief)).catch(() => {});
+        // Await insight generation before sending done — fast scrapers (Google Play,
+        // App Store) finish in <3s so the user navigates before a background promise
+        // completes. Awaiting here ensures the Insight Radar hits cache on page load.
+        send('saving', { message: 'Generating Insight Radar…' });
+        await getAllReviews(sessionId).then(reviews => generateInsight(reviews)).then(brief => saveInsightBrief(sessionId, brief)).catch(() => {});
 
         send('done', { sessionId: session.id, count: result.reviews.length });
       } catch (err) {
