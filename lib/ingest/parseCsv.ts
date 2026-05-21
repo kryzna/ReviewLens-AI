@@ -30,10 +30,15 @@ export function parseCsv(buffer: Buffer, filename: string): ScrapeResult {
       continue;
     }
     const d = parsed.data;
+    const parsedDate = new Date(d.date);
+    if (isNaN(parsedDate.getTime())) {
+      rowErrors.push({ row: i + 2, error: `Invalid date: "${d.date}"` });
+      continue;
+    }
     reviews.push({
       author: d.author?.trim() || undefined,
       rating: d.rating ?? null,
-      date: new Date(d.date).toISOString().split('T')[0],
+      date: parsedDate.toISOString().split('T')[0],
       text: d.text,
       sourceUrl: d.source_url || undefined,
       verified: d.verified === true || d.verified === 'true' || d.verified === '1',

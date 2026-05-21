@@ -2,3 +2,4 @@ This directory defines the high-level concepts, business logic, and architecture
 
 - [[deployment]] — Fly.io deploy config, Playwright/Chromium setup on Alpine, SQLite volume
 - [[chat-features]] — proactive insight brief, quick-start prompts, contextual follow-up chips
+- [[scrapers]] — Trustpilot scraper, concurrency control, rate-limiting avoidance, stealth

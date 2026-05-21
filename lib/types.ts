@@ -80,9 +80,24 @@ export interface InsightTheme {
   quote: string;
 }
 
+export interface InsightRadarTheme {
+  name: string;
+  score: number;
+  count: number;
+  sentiment: 'positive' | 'negative' | 'mixed';
+  topQuote: string;
+}
+
+export interface InsightRadarData {
+  themes: InsightRadarTheme[];
+  summary: string;
+  ingestedAt: string;
+}
+
 export interface InsightBrief {
   sentiment: string;
   score: number;
   summary: string;
   themes: InsightTheme[];
+  radar?: InsightRadarData;
 }

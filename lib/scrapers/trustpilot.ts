@@ -46,6 +46,13 @@ export const trustpilotScraper: Scraper = {
       return await scrapeWithPlaywright(sourceUrl, cap, onProgress);
     } catch (err) {
       if (err instanceof ScraperError) throw err;
+      const msg = err instanceof Error ? err.message : String(err);
+      // Playwright browser not installed — surface that directly instead of trying fetch
+      if (msg.includes("Executable doesn't exist") || msg.includes('browserType.launch') || msg.includes('playwright')) {
+        throw new ScraperError(
+          'Playwright browser not installed. Run `npx playwright install chromium` then retry, or use file upload instead.'
+        );
+      }
       console.error('[trustpilot] Playwright failed, falling back to fetch:', err);
       return await scrapeWithFetch(sourceUrl, cap, onProgress);
     }
@@ -81,10 +88,9 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
 
   const fs = await import('fs');
   const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));
-  if (!executablePath) throw new Error('No Chrome found for Playwright');
 
   const browser = await chromium.launch({
-    executablePath,
+    ...(executablePath ? { executablePath } : {}),
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
@@ -241,6 +247,10 @@ async function fetchHtml(url: string): Promise<string> {
     },
     signal: AbortSignal.timeout(20_000),
   });
-  if (!res.ok) throw new ScraperError(`Trustpilot fetch failed: HTTP ${res.status}`);
+  if (!res.ok) throw new ScraperError(
+    res.status === 403 || res.status === 429
+      ? 'Trustpilot blocked the request. Install a Playwright browser (`npx playwright install chromium`) or use file upload instead.'
+      : `Trustpilot fetch failed: HTTP ${res.status}`
+  );
   return res.text();
 }

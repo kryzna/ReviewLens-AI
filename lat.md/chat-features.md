@@ -6,9 +6,25 @@ AI-powered features in the session chat panel beyond basic Q&A, implemented in [
 
 Fetches `GET /api/sessions/[id]/insight` on session load and renders a collapsible card with sentiment label, star score, summary, and 3 top themes with verbatim quotes — before the user asks anything.
 
-The backend calls [[lib/llm/insight.ts#generateInsight]], which caps input at 200 reviews and requests JSON output (`max_tokens=600`). Parse errors are caught and suppressed; the card simply does not appear on failure.
+The loading spinner only appears after a **500 ms delay** to avoid flashing on cache hits.
+
+The backend calls [[lib/llm/insight.ts#generateInsight]], which caps input at 200 reviews and requests JSON output (`max_tokens=1200`). Parse errors are caught and suppressed; the card simply does not appear on failure.
+
+The response includes an additive `radar` field (`InsightRadarData`) — 5-6 themes each with a normalized 0-100 score, review count, sentiment label, and top verbatim quote. This powers the `InsightPanel` spider chart. Old cached briefs without `radar` are still valid (field is optional).
 
 Result is persisted in `sessions.insight_brief` (JSON text column). On subsequent loads the cached value is returned immediately — no LLM call. Cache is permanent; re-ingesting creates a new session with no cache.
+
+## Insight Radar
+
+Spider/radar chart rendered on session page load before the user types anything. Powered by the `radar` field in the `/insight` API response.
+
+`[[components/InsightPanel.tsx]]` fetches `/api/sessions/[id]/insight` client-side on mount, extracts `json.radar`, and renders `[[components/InsightRadar.tsx]]` (recharts `RadarChart`) + `[[components/QuoteStream.tsx]]` (rotating quotes). Skeleton shown while in-flight; error falls back to a single line of text.
+
+`[[components/InsightRadar.tsx]]` plots 5-6 theme axes. Each dot is colored by sentiment (green/red/amber). Tooltip shows review count, score, and top verbatim quote. Loaded via `next/dynamic` with `ssr: false` to avoid recharts SSR issues.
+
+`[[components/QuoteStream.tsx]]` cycles through `themes[].topQuote` every 4 seconds with a 400 ms fade transition. Each quote shows a sentiment badge (positive/negative/mixed) and the theme name.
+
+`InsightPanel` is placed in `[[app/session/[id]/page.tsx]]` between `SummaryCard` and `TabsClient`.
 
 ## Quick-Start Prompts
 

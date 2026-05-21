@@ -131,7 +131,8 @@ export default function NewSessionForm() {
       } catch {
         setError('Ingest failed. Check the URL and try again.');
       }
-      setSteps(prev => prev.map(s => s.status === 'active' ? { ...s, status: 'done' as const } : s));
+      setSteps([]);
+      setPages([]);
     });
   }
 

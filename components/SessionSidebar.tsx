@@ -41,7 +41,7 @@ export default function SessionSidebar() {
   useEffect(() => {
     fetch('/api/sessions')
       .then(r => r.json())
-      .then((d: { sessions: Session[] }) => setSessions(d.sessions))
+      .then((d: { sessions: Session[] }) => setSessions(d.sessions ?? []))
       .catch(console.error);
   }, [pathname]);
 

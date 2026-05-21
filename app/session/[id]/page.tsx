@@ -4,6 +4,7 @@ import SummaryCard from '@/components/SummaryCard';
 import ChatPanel from '@/components/ChatPanel';
 import ReviewsPanel from '@/components/ReviewsPanel';
 import TabsClient from '@/components/TabsClient';
+import InsightPanel from '@/components/InsightPanel';
 import { getSession, getReviews, getAllReviews, getMessages } from '@/lib/db/repo';
 
 export default async function SessionPage({
@@ -26,6 +27,7 @@ export default async function SessionPage({
       <SessionSidebar />
       <main className="flex-1 overflow-auto p-8">
         <SummaryCard session={session} />
+        <InsightPanel sessionId={id} />
         <TabsClient
           reviewCount={session.reviewCount}
           chatPanel={
