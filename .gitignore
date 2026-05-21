@@ -246,3 +246,6 @@ next-env.d.ts
 .mcp.json
 .opencode
 .codex
+
+# Excluded from lat check scanning (raw AI session logs contain @lat: examples)
+ai-transcripts/
