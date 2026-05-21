@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { scrapeUrl, findScraper } from '@/lib/scrapers/index';
 import { computeAggregates } from '@/lib/ingest/normalize';
-import { insertSession, insertReviews } from '@/lib/db/repo';
+import { insertSession, insertReviews, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
+import { generateInsight } from '@/lib/llm/insight';
 import { ScraperError, type Source } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -64,6 +65,9 @@ export async function GET(req: NextRequest) {
           ...aggregates,
         });
         await insertReviews(sessionId, result.reviews);
+
+        // Pre-warm insight cache so session page loads instantly
+        getAllReviews(sessionId).then(reviews => generateInsight(reviews)).then(brief => saveInsightBrief(sessionId, brief)).catch(() => {});
 
         send('done', { sessionId: session.id, count: result.reviews.length });
       } catch (err) {
