@@ -4,7 +4,8 @@ import { scrapeUrl, findScraper } from '@/lib/scrapers/index';
 import { parseCsv } from '@/lib/ingest/parseCsv';
 import { parseJsonl } from '@/lib/ingest/parseJsonl';
 import { computeAggregates } from '@/lib/ingest/normalize';
-import { insertSession, insertReviews, listSessions } from '@/lib/db/repo';
+import { insertSession, insertReviews, listSessions, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
+import { generateInsight } from '@/lib/llm/insight';
 import { ScraperError, IngestError, type Source } from '@/lib/types';
 
 export async function GET() {
@@ -74,6 +75,9 @@ export async function POST(req: NextRequest) {
     });
 
     await insertReviews(sessionId, result.reviews);
+
+    // Pre-warm insight cache so Insight Radar loads instantly on session page
+    getAllReviews(sessionId).then(reviews => generateInsight(reviews)).then(brief => saveInsightBrief(sessionId, brief)).catch(() => {});
 
     return NextResponse.json({ sessionId: session.id }, { status: 201 });
   } catch (err) {

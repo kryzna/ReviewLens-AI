@@ -26,7 +26,7 @@ Spider/radar chart rendered on session page load before the user types anything.
 
 `InsightPanel` is placed in `[[app/session/[id]/page.tsx]]` between `SummaryCard` and `TabsClient`.
 
-The insight cache is pre-warmed at scrape time: `[[app/api/sessions/stream/route.ts]]` fires `generateInsight` + `saveInsightBrief` in a background promise (no `await`) after `insertReviews`. By the time the user navigates to the session page, `/api/sessions/[id]/insight` hits the cache and returns immediately.
+The insight cache is pre-warmed at ingest time in both ingestion paths: `[[app/api/sessions/stream/route.ts]]` (URL scrape) and `[[app/api/sessions/route.ts]]` (file upload) both fire `generateInsight` + `saveInsightBrief` in a background promise (no `await`) after `insertReviews`. By the time the user navigates to the session page, `/api/sessions/[id]/insight` hits the cache and returns immediately.
 
 ## Session Sidebar
 
