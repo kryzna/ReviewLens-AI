@@ -48,7 +48,7 @@ export const trustpilotScraper: Scraper = {
       if (err instanceof ScraperError) throw err;
       const msg = err instanceof Error ? err.message : String(err);
       // Playwright browser not installed — surface that directly instead of trying fetch
-      if (msg.includes("Executable doesn't exist") || msg.includes('browserType.launch') || msg.includes('playwright')) {
+      if (msg.includes("Executable doesn't exist") || msg.includes('browserType.launch')) {
         throw new ScraperError(
           'Playwright browser not installed. Run `npx playwright install chromium` then retry, or use file upload instead.'
         );
