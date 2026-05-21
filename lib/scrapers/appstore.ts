@@ -16,54 +16,52 @@ export const appStoreScraper: Scraper = {
     if (!appIdMatch) throw new ScraperError('App Store: could not extract app ID from URL.');
     onProgress?.({ type: 'navigating', source: 'App Store' });
 
-    const appId = appIdMatch[1];
+    const appId = parseInt(appIdMatch[1], 10);
     const countryMatch = new URL(url).pathname.match(/^\/([a-z]{2})\//);
     const country = countryMatch?.[1] ?? 'us';
 
+    let store: typeof import('app-store-scraper');
+    try {
+      store = await import('app-store-scraper');
+    } catch {
+      throw new ScraperError('App Store scraper unavailable. Use file upload instead.');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const api = (store.default ?? store) as any;
+
+    let appName = `App ${appId}`;
+    try {
+      const info = await api.app({ id: appId, country });
+      appName = info.title ?? appName;
+    } catch { /* non-fatal */ }
+
     const reviews: ScrapeResult['reviews'] = [];
-    let appName = '';
+    const pages = Math.min(10, Math.ceil(cap / 50));
 
-    for (let page = 1; page <= 10 && reviews.length < cap; page++) {
-      const rssUrl =
-        `https://itunes.apple.com/${country}/rss/customerreviews/page=${page}/id=${appId}/sortby=mostrecent/json`;
-
-      const res = await fetch(rssUrl, {
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!res.ok) throw new ScraperError(`App Store RSS fetch failed: HTTP ${res.status}`);
-
-      const data = await res.json() as Record<string, unknown>;
-      const feed = (data as { feed?: { entry?: unknown[] } }).feed;
-      if (!feed?.entry || feed.entry.length === 0) break;
-
-      for (const entry of feed.entry as Record<string, Record<string, unknown>>[]) {
-        // First entry is app metadata
-        if (entry['im:name'] && !entry['im:rating']) {
-          appName = String(entry['im:name'].label ?? '');
-          continue;
+    for (let page = 1; page <= pages && reviews.length < cap; page++) {
+      onProgress?.({ type: 'page-start', pageNum: page, totalPages: pages });
+      try {
+        const raw = await api.reviews({ id: appId, country, sort: api.sort?.RECENT ?? 2, page });
+        if (!raw?.length) break;
+        for (const r of raw) {
+          if (reviews.length >= cap) break;
+          if (!r.text?.trim()) continue;
+          reviews.push({
+            sourceReviewId: String(r.id ?? ''),
+            author: r.userName?.trim() || undefined,
+            rating: typeof r.score === 'number' ? r.score : null,
+            date: r.date ? new Date(r.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            text: r.text.trim(),
+            verified: false,
+            sourceUrl: url,
+          });
         }
-
-        if (reviews.length >= cap) break;
-
-        const rating = parseInt(String(entry['im:rating']?.label ?? '0'), 10) || null;
-        const date = entry.updated?.label
-          ? new Date(String(entry.updated.label)).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0];
-        const text = String(entry.content?.label ?? '').trim();
-        const author = String((entry.author as Record<string, unknown>)?.name ?? '').trim() || undefined;
-        const sourceReviewId = String(entry.id?.label ?? '').split('/').pop() || undefined;
-
-        if (!text) continue;
-
-        reviews.push({ author, rating, date, text, verified: true, sourceReviewId, sourceUrl: url });
-      }
-      onProgress?.({ type: 'extracting', count: reviews.length, cap });
+        onProgress?.({ type: 'page-done', pageNum: page, totalPages: pages, reviewCount: reviews.length });
+      } catch { break; }
     }
 
-    if (reviews.length === 0) {
-      throw new ScraperError('App Store: no reviews found for this app.');
-    }
-
-    return { subjectName: appName || `App ${appId}`, sourceUrl: url, reviews };
+    if (reviews.length === 0) throw new ScraperError('App Store: no reviews found for this app.');
+    return { subjectName: appName, sourceUrl: url, reviews };
   },
 };
