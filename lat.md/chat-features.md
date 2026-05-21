@@ -64,7 +64,7 @@ A "Try sample data" button fetches `public/reviews.csv` and calls `ingestFile` d
 
 While `loading` is true, the entire form is locked: the dropzone is disabled (50% opacity, `cursor-not-allowed`, click/drag/drop ignored, file input `disabled`); the URL input and cap number input are also `disabled` (50% opacity, `cursor-not-allowed`); the Enter keydown on the URL input is gated on `!loading`. This prevents any new ingest from interrupting an in-flight one.
 
-A spinning SVG appears inside the right edge of the URL input while `loading` is true. A "✕ Cancel" button appears next to the ingest button during loading — it calls `cancelIngest()`, which closes the `EventSource` (stored in `esRef`) or aborts the `fetch` (via `AbortController` in `abortRef`) and resets all progress state. Aborted file uploads are silently swallowed (AbortError is not shown as an error).
+A spinning SVG appears inside the right edge of the URL input while `loading` is true. The page-fetch progress label reads "Fetching page N of M" while a page is loading, switching to "Fetched M pages" once all are done. A "✕ Cancel" button appears next to the ingest button during loading — it calls `cancelIngest()`, which closes the `EventSource` (stored in `esRef`) or aborts the `fetch` (via `AbortController` in `abortRef`) and resets all progress state. Aborted file uploads are silently swallowed (AbortError is not shown as an error).
 
 ## Ingestion Result Summary
 

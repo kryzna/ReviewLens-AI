@@ -396,7 +396,12 @@ export default function NewSessionForm() {
         {pages.length > 0 && (
           <div className="mt-4">
             <p className="text-xs font-medium text-slate-500 mb-2">
-              Fetching {pages.length} page{pages.length > 1 ? 's' : ''} sequentially
+              {(() => {
+                const active = [...pages].reverse().find(p => p.status === 'loading');
+                return active
+                  ? `Fetching page ${active.pageNum} of ${pages.length}`
+                  : `Fetched ${pages.length} page${pages.length > 1 ? 's' : ''}`;
+              })()}
             </p>
             <div className="flex flex-wrap gap-2">
               {pages.map(p => (
