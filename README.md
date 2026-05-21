@@ -6,7 +6,7 @@ Live: **https://reviewlens-ai-f6lj.onrender.com**
 
 ## Features
 
-- **URL ingest**: Trustpilot and Capterra (headless Chromium, Cloudflare-safe, up to 500 reviews)
+- **URL ingest**: Trustpilot, Capterra, G2, and Google Play (headless Chromium + fetch fallback, Cloudflare-safe, up to 500 reviews)
 - **File upload**: CSV or JSONL (any source)
 - **Insight Radar**: spider chart of 5-6 product dimensions (score 0–100, sentiment colour, review count) — rendered before you ask anything, cache pre-warmed at scrape time so load is instant
 - **Proactive Insight Brief**: collapsible card with top 3 themes, verbatim quotes, sentiment label + star score — same LLM call as Radar, zero extra cost
@@ -56,12 +56,18 @@ Bob,2,2024-02-01,Stopped working after update
 ## Scraping
 
 ### Trustpilot
-Uses headless Chromium (`playwright-core`, no browser auto-download) with `--disable-blink-features=AutomationControlled` and a spoofed Chrome user-agent to bypass bot detection. Pages fetched sequentially (concurrency=1, 1.5 s delay) to avoid rate-limiting. Extracts from `__NEXT_DATA__` JSON. Falls back to plain `fetch` if Playwright fails.
+Headless Chromium with `--disable-blink-features=AutomationControlled` + spoofed user-agent. Pages fetched sequentially (concurrency=1, 1.5 s delay) to avoid rate-limiting. Extracts from `__NEXT_DATA__` JSON. Falls back to plain `fetch` if Playwright fails.
 
 ### Capterra
-Sequential page fetching (Cloudflare challenges every page). Extracts from `SoftwareApplication` JSON-LD + DOM date extraction.
+Playwright-first; falls back to plain fetch (regex JSON-LD extraction) if Cloudflare blocks the headless browser. URL slugs are lowercased to handle casing variations.
 
-Both scrapers require Chromium:
+### G2
+Same Playwright + fetch fallback pattern as Capterra. Extracts via schema.org microdata (`[itemtype="http://schema.org/Review"]`) — more stable than CSS selectors. 2 s inter-page delay, 10-page cap.
+
+### Google Play
+Uses `google-play-scraper` npm package — no Playwright required.
+
+Scrapers requiring Chromium (Trustpilot, Capterra, G2):
 - **macOS**: `npx playwright install chromium`
 - **Linux**: `apt install chromium-browser`
 - **Docker**: bundled via `apk add chromium`
@@ -124,7 +130,6 @@ npx jest lib/scrapers/capterra.test.ts --testNamePattern="@integration"
 
 - No auth — anyone with a session URL can read its chat history
 - Scope guard (system prompt only) is bypassable by determined prompt injection
-- Capterra scraper is sequential due to Cloudflare
-- No rate limiting on ingestion API
+- Capterra and G2 scrapers are sequential due to Cloudflare; may return empty results on heavily-protected pages
 - No pagination on Reviews tab beyond load-more
-- App Store and Google Play scrapers exist but have no integration tests and are not advertised in the UI
+- App Store scraper excluded — Apple's review API returns 0 results for third-party access
