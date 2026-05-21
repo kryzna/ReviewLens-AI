@@ -60,6 +60,8 @@ Static templates in `public/` help users format CSV or JSONL uploads correctly b
 
 `public/template.csv` and `public/template.jsonl` each contain 3 example rows covering all supported columns. Download links appear in `[[components/NewSessionForm.tsx]]` below the file upload drop zone. Required columns are `text` and `date`; optional are `author`, `rating` (1–5), `source_url`, `verified`.
 
+A "Try sample data" button fetches `public/reviews.csv` and calls `ingestFile` directly. Unlike URL ingestion (which uses SSE and populates steps/pages via events), file upload uses a plain `POST /api/sessions` with no streaming. To provide equivalent visual feedback, `ingestFile` pushes synthetic steps into the same `steps` state: "Uploading {filename}…" (pulsing) while the POST is in-flight, then "✓ Uploaded {filename}" + "Generating Insight Radar…" (pulsing) while `fetchAndShowSummary` resolves.
+
 ## Ingestion Result Summary
 
 After any ingest (URL or file upload), `[[components/NewSessionForm.tsx]]` fetches the created session via `GET /api/sessions/[id]?limit=0` and renders an inline summary card instead of immediately redirecting.

@@ -138,16 +138,22 @@ export default function NewSessionForm() {
   }
 
   async function ingestFile(file: File) {
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setSteps([]);
+    setSteps([{ label: `Uploading ${file.name}…`, status: 'active' }]);
     const form = new FormData();
     form.append('file', file);
     try {
       const res = await fetch('/api/sessions', { method: 'POST', body: form });
       const data = await res.json() as { sessionId?: string; error?: string };
-      if (!res.ok) { setError(data.error ?? 'Upload failed.'); return; }
+      if (!res.ok) { setError(data.error ?? 'Upload failed.'); setSteps([]); return; }
+      setSteps([
+        { label: `Uploaded ${file.name}`, status: 'done' },
+        { label: 'Generating Insight Radar…', status: 'active' },
+      ]);
       void fetchAndShowSummary(data.sessionId!);
     } catch {
       setError('Network error.');
+      setSteps([]);
     } finally {
       setLoading(false);
     }
