@@ -83,8 +83,8 @@ function extractReviews(pageReviews: any[], cap: number, collected: number): Scr
 
 async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?: ProgressCallback): Promise<ScrapeResult> {
   const { chromium } = await import('playwright-extra');
-  const { default: StealthPlugin } = await import('playwright-extra-plugin-stealth');
-  chromium.use(StealthPlugin());
+  const StealthPlugin = await import('puppeteer-extra-plugin-stealth');
+  chromium.use((StealthPlugin.default ?? StealthPlugin)());
 
   const fs = await import('fs');
   const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));

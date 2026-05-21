@@ -18,7 +18,9 @@ The fetch path has no such delay — HTML endpoints are less aggressively rate-l
 
 ## Stealth
 
-Playwright launches via `playwright-extra` + `playwright-extra-plugin-stealth`. Stealth randomizes canvas, WebGL, and headless fingerprints. See [[deployment#Playwright on Alpine]] for container setup.
+Playwright launches via `playwright-extra` + `puppeteer-extra-plugin-stealth`. Stealth randomizes canvas, WebGL, and headless fingerprints. See [[deployment#Playwright on Alpine]] for container setup.
+
+`playwright-extra-plugin-stealth` is a broken stub — use `puppeteer-extra-plugin-stealth` instead (compatible with `playwright-extra`). Its CJS dependency chain (`puppeteer-extra-plugin`, `merge-deep`, `clone-deep`) must be in `serverExternalPackages` in `next.config.js` to prevent Next.js webpack static analysis errors.
 
 ## Progress Events
 
