@@ -8,12 +8,13 @@ Live: **https://reviewlens-ai-f6lj.onrender.com**
 
 - **URL ingest**: Trustpilot and Capterra (headless Chromium, Cloudflare-safe, up to 500 reviews)
 - **File upload**: CSV or JSONL (any source)
-- **Proactive Insight Brief**: auto-generated on session load — top 3 themes, verbatim quotes, sentiment label + star score — before you ask anything
+- **Insight Radar**: spider chart of 5-6 product dimensions (score 0–100, sentiment colour, review count) — rendered before you ask anything, cache pre-warmed at scrape time so load is instant
+- **Proactive Insight Brief**: collapsible card with top 3 themes, verbatim quotes, sentiment label + star score — same LLM call as Radar, zero extra cost
 - **Quick-start prompts**: 4 analytical questions in empty chat state, disappear after first message
 - **Contextual follow-up chips**: after each AI response, 2-3 LLM-generated follow-up questions appear as clickable chips
 - **Scoped Q&A**: every answer cites specific reviews via inline `[r:id]` source chips
 - **Scope guard**: refuses off-topic questions; styled with a refusal bubble
-- **Session history**: persisted in PostgreSQL, survives restarts
+- **Session history**: persisted in PostgreSQL, survives restarts; delete any session from the sidebar
 
 ## Quick start
 
@@ -55,7 +56,7 @@ Bob,2,2024-02-01,Stopped working after update
 ## Scraping
 
 ### Trustpilot
-Uses headless Chromium (Playwright) to bypass Cloudflare. Pages fetched with a concurrency limit of 3 tabs to stay within memory bounds. Extracts from `__NEXT_DATA__` JSON. Falls back to plain `fetch` if Playwright fails.
+Uses headless Chromium (`playwright-core`, no browser auto-download) with `--disable-blink-features=AutomationControlled` and a spoofed Chrome user-agent to bypass bot detection. Pages fetched sequentially (concurrency=1, 1.5 s delay) to avoid rate-limiting. Extracts from `__NEXT_DATA__` JSON. Falls back to plain `fetch` if Playwright fails.
 
 ### Capterra
 Sequential page fetching (Cloudflare challenges every page). Extracts from `SoftwareApplication` JSON-LD + DOM date extraction.
