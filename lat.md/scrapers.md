@@ -1,12 +1,18 @@
 # Scrapers
 
-Review ingestion via two strategies: Playwright (JS-rendered pages) with stealth, and raw HTML fetch. Both use [[lib/scrapers/trustpilot.ts]] as the reference implementation.
+Review ingestion via two strategies: Playwright (JS-rendered pages) with anti-detection flags, and raw HTML fetch fallback. Both Trustpilot ([[lib/scrapers/trustpilot.ts]]) and Capterra ([[lib/scrapers/capterra.ts]]) try Playwright first and fall back to plain fetch when blocked.
 
 ## Trustpilot Scraper
 
-Tries `scrapeWithPlaywright` first (stealth, handles JS rendering), falls back to `scrapeWithFetch` only on non-ScraperError.
+Tries `scrapeWithPlaywright` first (handles JS rendering), falls back to `scrapeWithFetch` only on non-ScraperError.
 
 If Playwright browser is not installed, the error is surfaced directly with an install hint rather than falling through to fetch (which would also get blocked).
+
+## Capterra Scraper
+
+Tries `scrapeWithPlaywright` first; falls back to `scrapeWithFetch` (regex JSON-LD from raw HTML) if Playwright returns a ScraperError. Dates are unavailable in the fetch path and default to today.
+
+URL slugs are lowercased in `canonicalise()` to handle casing variations (e.g. `JIRA` → `jira`).
 
 ## Concurrency Control
 
@@ -16,11 +22,14 @@ Playwright pages are fetched sequentially with a **1.5 s inter-page delay** to a
 
 The fetch path has no such delay — HTML endpoints are less aggressively rate-limited.
 
-## Stealth
+## Anti-Detection
 
-Playwright launches via `playwright-extra` + `puppeteer-extra-plugin-stealth`. Stealth randomizes canvas, WebGL, and headless fingerprints. See [[deployment#Playwright on Alpine]] for container setup.
+Both scrapers use `playwright-core` directly (no `playwright-extra` or stealth plugin). Anti-detection via:
+- `--disable-blink-features=AutomationControlled`
+- Spoofed Chrome user-agent
+- `Accept-Language` and other browser-like headers
 
-`playwright-extra-plugin-stealth` is a broken stub — use `puppeteer-extra-plugin-stealth` instead (compatible with `playwright-extra`). Its CJS dependency chain (`puppeteer-extra-plugin`, `merge-deep`, `clone-deep`) must be in `serverExternalPackages` in `next.config.js` to prevent Next.js webpack static analysis errors.
+See [[deployment#Playwright on Alpine]] for container setup.
 
 ## Progress Events
 

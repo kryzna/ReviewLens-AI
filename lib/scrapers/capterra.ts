@@ -26,7 +26,16 @@ export const capterraScraper: Scraper = {
   async scrape(url: string, cap = 500, onProgress?: ProgressCallback): Promise<ScrapeResult> {
     const sourceUrl = canonicalise(url);
     onProgress?.({ type: 'navigating', source: 'Capterra' });
-    return scrapeWithPlaywright(sourceUrl, cap, onProgress);
+    try {
+      return await scrapeWithPlaywright(sourceUrl, cap, onProgress);
+    } catch (err) {
+      if (err instanceof ScraperError) {
+        // Playwright got blocked — try plain fetch fallback
+        console.error('[capterra] Playwright blocked, falling back to fetch:', err.message);
+        return await scrapeWithFetch(sourceUrl, cap, onProgress);
+      }
+      throw err;
+    }
   },
 };
 
@@ -35,6 +44,10 @@ function canonicalise(url: string): string {
   let path = u.pathname.replace(/\/$/, '');
   // /software/{id}/{slug} → /p/{id}/{slug}
   path = path.replace(/^\/software\//, '/p/');
+  // lowercase slug to normalise user-supplied casing (e.g. JIRA → jira)
+  const parts = path.split('/');
+  if (parts.length >= 4) parts[3] = parts[3].toLowerCase();
+  path = parts.join('/');
   // ensure /reviews/ suffix
   if (!path.endsWith('/reviews')) path += '/reviews';
   return `https://www.capterra.com${path}/`;
@@ -155,4 +168,67 @@ async function scrapeWithPlaywright(sourceUrl: string, cap: number, onProgress?:
   } finally {
     await browser.close();
   }
+}
+
+async function scrapeWithFetch(sourceUrl: string, cap: number, onProgress?: ProgressCallback): Promise<ScrapeResult> {
+  onProgress?.({ type: 'page-start', pageNum: 1, totalPages: 1 });
+  const page1Html = await fetchHtml(sourceUrl);
+  const page1ld = extractJsonLd(page1Html);
+
+  if (!page1ld) throw new ScraperError(ANTI_BOT_MSG);
+
+  const subjectName: string = page1ld.name ?? 'Unknown';
+  const reviewCount: number = page1ld.aggregateRating?.reviewCount ?? cap;
+  const perPage = page1ld.review?.length ?? REVIEWS_PER_PAGE;
+  const maxPagesByCount = Math.ceil(reviewCount / perPage);
+  const totalPages = Math.min(Math.ceil(cap / perPage), maxPagesByCount);
+
+  // dates unavailable via fetch (DOM-only selector); reviews default to today
+  const reviews = extractReviews(page1ld.review ?? [], [], sourceUrl, cap, 0);
+  onProgress?.({ type: 'page-done', pageNum: 1, totalPages, reviewCount: reviews.length });
+
+  if (totalPages > 1) {
+    for (let pageNum = 2; pageNum <= totalPages; pageNum++) {
+      if (reviews.length >= cap) break;
+      const html = await fetchHtml(`${sourceUrl}?page=${pageNum}`);
+      const jsonLd = extractJsonLd(html);
+      const extracted = extractReviews(jsonLd?.review ?? [], [], sourceUrl, cap, reviews.length);
+      onProgress?.({ type: 'page-done', pageNum, totalPages, reviewCount: extracted.length });
+      reviews.push(...extracted.slice(0, cap - reviews.length));
+    }
+  }
+
+  if (reviews.length === 0) throw new ScraperError(ANTI_BOT_MSG);
+  return { subjectName, sourceUrl, reviews };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractJsonLd(html: string): any | null {
+  const re = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g;
+  let match;
+  while ((match = re.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(match[1]);
+      if (data['@type'] === 'SoftwareApplication') return data;
+    } catch { /* skip */ }
+  }
+  return null;
+}
+
+async function fetchHtml(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Upgrade-Insecure-Requests': '1',
+    },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new ScraperError(ANTI_BOT_MSG);
+  return res.text();
 }
