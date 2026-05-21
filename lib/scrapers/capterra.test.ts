@@ -3,7 +3,7 @@ import { ScraperError } from '@/lib/types';
 
 // Each test uses a distinct product URL to avoid Cloudflare rate-limiting
 // from rapid repeat requests to the same page.
-const URL_T1 = 'https://www.capterra.com/p/169455/Zoho-Projects/';
+const URL_T1 = 'https://www.capterra.com/p/19319/Jira/';
 const URL_T2 = 'https://www.capterra.com/p/135003/Slack/';
 const URL_T3 = 'https://www.capterra.com/p/66658/Asana/';
 const URL_T4 = 'https://www.capterra.com/p/93423/Trello/';
