@@ -249,3 +249,6 @@ next-env.d.ts
 
 # Excluded from lat check scanning (raw AI session logs contain @lat: examples)
 ai-transcripts/
+
+# Demo recordings (large video files)
+demo-out/
