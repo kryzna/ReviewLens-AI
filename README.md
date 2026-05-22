@@ -122,9 +122,13 @@ npx jest lib/scrapers/capterra.test.ts --testNamePattern="@integration"
 
 ## Assumptions
 
-- 500 review cap per session keeps token cost bounded; scraper concurrency limited to 3 Playwright tabs to avoid OOM on free-tier hosts (512 MB RAM)
+- 500 review cap per session keeps token cost bounded; Playwright scraping is sequential (concurrency=1) to avoid bot detection and OOM on free-tier hosts (512 MB RAM); fetch fallback uses concurrency=5
 - Stuff-in-context Q&A is sufficient at ≤500 reviews; revisit with embeddings if cap grows past ~5k
 - Single Postgres instance; not designed for concurrent load or horizontal scaling
+
+## Rate limiting
+
+Ingest endpoints (`POST /api/sessions`, `GET /api/sessions/stream`) enforce 5 requests per IP per minute. Exceeding the limit returns HTTP 429 with a `Retry-After` header. Limit resets per process restart (in-memory sliding window — acceptable for single-instance deploys).
 
 ## Known limitations
 
@@ -132,4 +136,4 @@ npx jest lib/scrapers/capterra.test.ts --testNamePattern="@integration"
 - Scope guard (system prompt only) is bypassable by determined prompt injection
 - Capterra and G2 scrapers are sequential due to Cloudflare; may return empty results on heavily-protected pages
 - No pagination on Reviews tab beyond load-more
-- App Store scraper excluded — Apple's review API returns 0 results for third-party access
+- App Store scraper excluded — Apple's review API is unavailable for third-party access
