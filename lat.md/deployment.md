@@ -1,6 +1,6 @@
 # Deployment
 
-Fly.io deployment using Docker. App configured in `fly.toml`, container built from `Dockerfile`.
+Railway deployment using Docker. Container built from `Dockerfile`.
 
 ## Playwright on Alpine
 

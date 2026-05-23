@@ -252,3 +252,10 @@ ai-transcripts/
 
 # Demo recordings (large video files)
 demo-out/
+
+# scripts for generating videos
+
+scripts/
+
+# graphify analysis output (regenerated on demand)
+graphify-out/
