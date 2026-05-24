@@ -33,7 +33,7 @@ export function parseJsonl(buffer: Buffer, filename: string): ScrapeResult {
     reviews.push({
       author: d.author?.trim() || undefined,
       rating: d.rating ?? null,
-      date: new Date(d.date).toISOString().split('T')[0],
+      date: (() => { const dt = new Date(d.date); return isNaN(dt.getTime()) ? d.date : dt.toISOString().split('T')[0]; })(),
       text: d.text,
       sourceUrl: d.source_url || undefined,
       verified: d.verified ?? false,

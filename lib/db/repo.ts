@@ -95,6 +95,67 @@ function rowToSession(row: Record<string, unknown>): Session {
   };
 }
 
+// ── Session + Reviews (atomic) ────────────────────────────────────────────────
+
+export async function insertSessionWithReviews(
+  session: Omit<Session, 'id'> & { id?: string },
+  reviews: Omit<Review, 'id' | 'sessionId'>[]
+): Promise<Session> {
+  const pool = await db();
+  const client = await pool.connect();
+  const id = session.id ?? uuidv4();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `INSERT INTO sessions
+         (id, source, source_url, file_name, requested_cap, subject_name, ingested_at,
+          review_count, verified_count, date_min, date_max, rating_avg, rating_dist)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [
+        id,
+        session.source,
+        session.sourceUrl ?? null,
+        session.fileName ?? null,
+        session.requestedCap ?? null,
+        session.subjectName,
+        session.ingestedAt,
+        session.reviewCount,
+        session.verifiedCount,
+        session.dateMin ?? null,
+        session.dateMax ?? null,
+        session.ratingAvg ?? null,
+        JSON.stringify(session.ratingDist),
+      ]
+    );
+    for (const r of reviews) {
+      await client.query(
+        `INSERT INTO reviews
+           (id, session_id, source_review_id, author, rating, date, text, source_url, verified, extra)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [
+          uuidv4(),
+          id,
+          r.sourceReviewId ?? null,
+          r.author ?? null,
+          r.rating ?? null,
+          r.date,
+          r.text,
+          r.sourceUrl ?? null,
+          r.verified,
+          r.extra ? JSON.stringify(r.extra) : null,
+        ]
+      );
+    }
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+  return { ...session, id };
+}
+
 // ── Reviews ───────────────────────────────────────────────────────────────────
 
 export async function insertReviews(

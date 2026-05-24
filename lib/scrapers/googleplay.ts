@@ -60,9 +60,10 @@ export const googlePlayScraper: Scraper = {
       sourceReviewId: String(r.id ?? ''),
       author: String(r.userName ?? '').trim() || undefined,
       rating: typeof r.score === 'number' ? r.score : null,
-      date: r.date instanceof Date
-        ? r.date.toISOString().split('T')[0]
-        : new Date(String(r.date ?? '')).toISOString().split('T')[0],
+      date: (() => {
+        const dt = r.date instanceof Date ? r.date : new Date(String(r.date ?? ''));
+        return isNaN(dt.getTime()) ? new Date().toISOString().split('T')[0] : dt.toISOString().split('T')[0];
+      })(),
       text: String(r.text ?? '').trim(),
       verified: false,
       sourceUrl: `https://play.google.com/store/apps/details?id=${appId}`,

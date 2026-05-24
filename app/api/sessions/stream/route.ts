@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { scrapeUrl, findScraper } from '@/lib/scrapers/index';
 import { computeAggregates } from '@/lib/ingest/normalize';
-import { insertSession, insertReviews, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
+import { insertSessionWithReviews, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
 import { generateInsight } from '@/lib/llm/insight';
 import { ScraperError, type Source } from '@/lib/types';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 
         const aggregates = computeAggregates(result);
         const sessionId = uuidv4();
-        const session = await insertSession({
+        const session = await insertSessionWithReviews({
           id: sessionId,
           source,
           sourceUrl: result.sourceUrl || undefined,
@@ -73,8 +73,7 @@ export async function GET(req: NextRequest) {
           subjectName: result.subjectName,
           ingestedAt: new Date().toISOString(),
           ...aggregates,
-        });
-        await insertReviews(sessionId, result.reviews);
+        }, result.reviews);
 
         // Await insight generation before sending done — fast scrapers (Google Play,
         // App Store) finish in <3s so the user navigates before a background promise

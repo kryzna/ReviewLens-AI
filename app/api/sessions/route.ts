@@ -4,7 +4,7 @@ import { scrapeUrl, findScraper } from '@/lib/scrapers/index';
 import { parseCsv } from '@/lib/ingest/parseCsv';
 import { parseJsonl } from '@/lib/ingest/parseJsonl';
 import { computeAggregates } from '@/lib/ingest/normalize';
-import { insertSession, insertReviews, listSessions, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
+import { insertSessionWithReviews, listSessions, getAllReviews, saveInsightBrief } from '@/lib/db/repo';
 import { generateInsight } from '@/lib/llm/insight';
 import { ScraperError, IngestError, type Source } from '@/lib/types';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const aggregates = computeAggregates(result);
     const sessionId = uuidv4();
 
-    const session = await insertSession({
+    const session = await insertSessionWithReviews({
       id: sessionId,
       source,
       sourceUrl: result.sourceUrl || undefined,
@@ -83,9 +83,7 @@ export async function POST(req: NextRequest) {
       subjectName: result.subjectName,
       ingestedAt: new Date().toISOString(),
       ...aggregates,
-    });
-
-    await insertReviews(sessionId, result.reviews);
+    }, result.reviews);
 
     // Await insight generation before responding — file upload returns in <1s so
     // the user navigates before the background pre-warm finishes. Awaiting here
