@@ -1,6 +1,6 @@
 # Deployment
 
-Railway deployment using Docker. Container built from `Dockerfile`.
+Render deployment using Docker. Container built from `Dockerfile`.
 
 ## Playwright on Alpine
 
